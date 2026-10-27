@@ -1,41 +1,35 @@
 # Homestead
 
-A Home Assistant integration for the whole homestead: vegetable garden, greenhouse, orchard and chicken coop.
+Your whole homestead in Home Assistant: vegetable garden, greenhouse, orchard and chicken coop. Every planting, season after season, with photos.
 
-> **Status: early development (0.2).** The crop calendar works: spaces, plantings, stages, to-do list and calendar. Watering, orchard and coop come next.
-
-## What it does today
-
-- **A garden** with its average frost dates, which every date is computed from.
-- **Spaces** (open ground, raised bed, greenhouse, pots), added from the garden's page. Sheltered spaces gain weeks on frost.
-- **Plantings**: pick a space and a crop from the [catalogue](docs/catalog.md) (30 common vegetables and herbs), then how and when to start it. Each planting is a device with:
-  - a **stage** selector: planned, sown, planted out, growing, harvesting, finished;
-  - its **next task** and when it is due;
-  - the **expected harvest** date.
-- **A to-do list** of the tasks due in the next two weeks: sow, transplant, stake, earth up, start harvesting… Ticking a task moves its planting to the next stage. You can add your own items too.
-- **A calendar** of sowing, planting-out and harvest periods.
-- Per space, the crops **that can be sown or planted now**.
-- English and French.
+> **Status: early development.** Version 0.2 is a stand-alone integration with a working crop calendar. The project is now moving to an **app + companion integration** architecture (see below). Not ready for everyday use yet.
 
 ## Goals
 
-- **Crop calendar that works anywhere.** Sowing, transplanting and harvest windows are expressed relative to *your* average frost dates, not to fixed months. They work in both hemispheres.
-- **Track every planting** from sowing to harvest: stage, journal, yields.
-- **A native to-do list and calendar** of what to do in the garden today, this week, this season.
-- **Watering guidance** from Home Assistant's weather, a FAO-56 water balance that knows what grows in each bed and at which stage, and soil moisture sensors if you have any.
-- **Greenhouse and frost alerts**, and blueprints to act on them (valves, vents, coop door).
-- **Orchard and coop:** pruning and treatment reminders, flock and egg log.
-- **Local only:** no account, no cloud. Everything is stored in Home Assistant and included in its backups.
+- **A crop calendar that works anywhere.** Sowing, transplanting and harvest windows follow *your* average frost dates, in both hemispheres.
+- **Every planting, year after year:** stages, journal, harvests, photos, comparison between seasons, rotation and companion planting checks, seed stock, succession sowing.
+- **A garden plan** you draw yourself.
+- **Native to-do list and calendar** in Home Assistant, plus advice for each crop.
+- **Water and climate:** a FAO-56 water balance that knows what grows in each bed and at which stage, soil moisture sensors, rain tank, frost alerts, greenhouse overheating, growing degree days. Valves are driven by Home Assistant automations, always with a maximum duration.
+- **Photos:** album per planting, camera timelapse, growth tracking (green cover), plant identification, pest and disease detection, optional AI diagnosis.
+- **Orchard and perennials:** fruit trees, soft fruit, perennial herbs, pruning, treatments, flowering and pollination, grafts.
+- **Chicken coop:** flock register, daily eggs, automatic door, water and feed levels, care, temperature and lighting, camera.
+- **Local first:** no account needed. Online services (Pl@ntNet, AI vision) are opt-in.
 
-The detailed design (in French) is in [docs/CONCEPTION.fr.md](docs/CONCEPTION.fr.md).
+## Architecture
 
-## Installation (HACS custom repository)
+| Part | Role |
+|---|---|
+| **Homestead app** (container, sidebar page through ingress) | User interface, SQLite database with every season, photos, image processing, crop calendar and water balance |
+| **Companion integration** (HACS) | Native entities (to-do list, calendar, stages, sensors), actions, dashboard cards, blueprints |
 
-1. In HACS, open the menu ⋮ → *Custom repositories*, add `https://github.com/antoine28boel/homestead` with the type *Integration*.
-2. Install **Homestead** and restart Home Assistant.
-3. Go to *Settings → Devices & services → Add integration → Homestead*.
+On Home Assistant OS, the app installs from the app store and the integration from HACS. On Container or Core installs, the same Docker image runs next to Home Assistant.
+
+The detailed design (in French) is in [docs/CONCEPTION.fr.md](docs/CONCEPTION.fr.md). The crop catalogue format is described in [docs/catalog.md](docs/catalog.md).
 
 ## Development
+
+The current integration (0.2) is tested with:
 
 ```bash
 python3.14 -m venv .venv

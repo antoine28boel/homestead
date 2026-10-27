@@ -1,8 +1,8 @@
-# Homestead – intégration Home Assistant pour le jardin, la serre, le verger et le poulailler
+# Homestead – jardin, serre, verger et poulailler dans Home Assistant
 
-*Proposition du 25/10/2026, mise à jour le 27/10/2026 (nom retenu : **Homestead**, domaine `homestead`). Ce document sert de base de discussion.*
+*Conception commencée le 25/10/2026, revue le 27/10/2026 : périmètre et architecture validés par le propriétaire (application + intégration compagnon, hébergée dans HA OS).*
 
-**Objectif :** suivre dans Home Assistant chaque culture du potager, de la serre et du verger, ainsi que le futur poulailler. Il s'agit de savoir quand arroser, semer, repiquer, récolter, tailler ou traiter, et ce qu'il y a à faire au jardin tout au long de l'année. L'intégration doit pouvoir être **installée par n'importe quel utilisateur de HA** (via HACS), quels que soient son climat et ses capteurs.
+**Objectif :** suivre dans Home Assistant chaque culture du potager, de la serre et du verger, d'année en année et en photos, ainsi que le futur poulailler. Savoir quand semer, repiquer, arroser, récolter, tailler ou traiter. Le projet doit pouvoir être **installé par n'importe quel utilisateur de HA**, quels que soient son climat et ses capteurs.
 
 ---
 
@@ -12,146 +12,225 @@
 |---|---|---|
 | `plant` (cœur de HA) | Seuils d'humidité, de lumière et de température par plante, à partir d'un capteur (MiFlora…) | Pas de calendrier ni de cycle de culture. En YAML uniquement |
 | [Plant Monitor (Olen)](https://github.com/Olen/homeassistant-plant) + OpenPlantbook + flower-card | Un appareil par plante, avec des seuils récupérés automatiquement selon l'espèce | Pensé pour une plante en pot avec son capteur, pas pour une planche de 20 poireaux |
-| [Smart Irrigation](https://github.com/altmenorg/HAsmartirrigation) | Calcule la durée d'arrosage à partir de l'évapotranspiration, de la pluie et des prévisions, par zone | Ne sait rien des cultures ni de leur stade. Le besoin d'une salade qui vient d'être repiquée n'est pas celui d'une courge en août |
+| [Smart Irrigation](https://github.com/altmenorg/HAsmartirrigation) | Durée d'arrosage calculée à partir de l'évapotranspiration, de la pluie et des prévisions, par zone | Ne sait rien des cultures ni de leur stade |
 | [HomeGrow](https://github.com/magikh0e/ha-home-grow) (alpha, 06/2026) | Une plante = un appareil : stade, santé, âge, calendrier de fertilisation | Orienté culture en intérieur, sans calendrier de saison ni météo |
 | [Seedtime](https://community.home-assistant.io/t/seedtime-integration/982670) | Affiche dans HA le plan et le calendrier d'un service en ligne | Dépend d'un service payant dans le nuage |
 | [MijnTuin](https://github.com/myTselection/MijnTuin) | Plantes et travaux de jardin (service belge) | Ne fonctionne plus depuis la fermeture du service (05/2024) |
-| Plant-it (déjà sur le serveur) | Carnet de soins des plantes, photos | Pas de lien avec HA, ne connaît ni la météo ni les capteurs |
 | Poulailler | Rien de dédié : bricolages ESPHome (porte au lever et au coucher du soleil, niveaux d'eau et de grain), porte Omlet | Pas de suivi du troupeau ni des œufs |
 
-**Le vide à combler :** rien ne relie aujourd'hui **le calendrier du jardinier** (quoi faire, quand, selon le climat), **le suivi de chaque culture** (stade, récoltes) et **les capteurs et la météo** (arrosage, gel, chaleur dans la serre). C'est le cœur de l'intégration.
+**Le vide à combler :** rien ne relie aujourd'hui **le calendrier du jardinier**, **le suivi de chaque culture** (stade, récoltes, photos, historique) et **les capteurs et la météo**.
 
 ---
 
-## 2. Principes
+## 2. Périmètre retenu (27/10/2026)
 
-1. **Tout reste dans HA**, sans compte ni service en ligne obligatoire. Les données sont stockées par HA et incluses dans ses sauvegardes.
-2. **Fonctionne sans aucun capteur.** Avec seulement la météo de HA, on a déjà le calendrier, les tâches et une estimation de l'arrosage. Chaque capteur ajouté rend le résultat plus précis.
-3. **Indépendant du climat.** Les dates du catalogue ne sont pas fixées au calendrier (« semer en avril »). Elles sont exprimées **par rapport aux dates de gel** du lieu (« semer sous abri 6 semaines avant les dernières gelées »). Ça fonctionne aussi bien à Profondeville qu'à Montréal ou en Australie, hémisphère sud compris.
-4. **Ne pas refaire ce qui existe.** OpenPlantbook, Plant Monitor et Smart Irrigation peuvent être utilisés s'ils sont installés.
-5. **Aucune action physique imposée.** L'intégration *dit* qu'il faut arroser ou fermer la serre. Ouvrir une vanne ou une porte, c'est le rôle des automatisations et des blueprints fournis, que l'utilisateur choisit d'activer. Elle peut piloter une vanne, mais seulement si l'utilisateur la désigne explicitement, et toujours avec une durée maximale.
-6. **Standards de la communauté :** code en anglais, traductions en anglais et en français dès le départ, configuration 100 % par l'interface, tests et validation HACS/hassfest.
+| Domaine | Fonctionnalités |
+|---|---|
+| **Cultures** | Calendrier selon les dates de gel ; stades ; journal (arrosages, apports, traitements, observations) ; récoltes pesées ou comptées ; historique et comparaison d'année en année ; rotation ; associations ; plan du jardin dessiné ; grainothèque (stock, péremption) ; semis échelonnés |
+| **Guidage** | Liste de tâches HA ; calendrier HA ; conseils par culture |
+| **Eau et climat** | Besoin en eau calculé avec la météo ; sondes d'humidité du sol ; pilotage des vannes ; alertes de gel ; surchauffe et ventilation de la serre ; cuve d'eau de pluie ; degrés-jours |
+| **Photos** | Album par culture et par saison ; timelapse avec une caméra ; suivi de croissance (surface verte) ; identification de plantes et de mauvaises herbes ; détection de maladies et de ravageurs ; diagnostic par IA de vision (en ligne, en option) ; maturité et comptage des fruits |
+| **Verger et vivaces** | Arbres fruitiers ; petits fruits ; aromatiques vivaces ; taille et traitements ; floraison et pollinisation ; greffes |
+| **Poulailler** | Registre des poules ; ponte quotidienne ; porte automatique ; niveaux d'eau et de grain ; soins (vermifuge, mue, poux) ; température et éclairage ; caméra |
+| **Interface** | Page dans la barre latérale ; cartes de tableau de bord ; saisie rapide au jardin sur smartphone ; statistiques (rendement par culture et par m²) |
 
----
-
-## 3. Modèle de données
-
-```
-Jardin (une entrée d'intégration)
-├── Profil climatique : position (celle de HA), dates moyennes des dernières et premières gelées,
-│                       hémisphère, sources météo (weather.*, pluviomètre, capteur de température)
-├── Espaces (sous-entrées)
-│   ├── type : planche / carré potager / serre / tunnel / pots / verger / pelouse / poulailler
-│   ├── surface, exposition, sol, abri (oui/non)
-│   ├── capteurs facultatifs : humidité du sol, température, humidité de l'air, vanne d'arrosage
-│   └── Cultures
-│       ├── espèce (catalogue) + variété libre
-│       ├── quantité, mode (semis direct, semis sous abri, plant acheté)
-│       ├── cycle : prévue → semée → levée → repiquée → en croissance → en récolte → terminée
-│       └── journal : arrosages, apports, traitements, récoltes (kg ou pièces), observations
-├── Vivaces et arbres (verger, petits fruits, aromatiques) : taille, traitements, récolte, chaque année
-└── Troupeau (poulailler) : poules (nom, race, date de naissance), œufs du jour, grain, eau, porte
-```
-
-### Le catalogue (le vrai trésor communautaire)
-
-Un fichier par espèce, en YAML, dans le dépôt. Chacun peut l'enrichir par une demande de fusion (*pull request*) :
-
-```yaml
-# catalogue/legumes/tomate.yaml
-id: tomato
-famille: solanaceae
-noms: { fr: Tomate, en: Tomato, nl: Tomaat }
-semis_abri:      { debut: -8, fin: -6, reference: derniere_gelee }   # en semaines
-repiquage:       { debut: +1, fin: +3, reference: derniere_gelee, temperature_min: 10 }
-semis_direct:    null
-recolte:         { jours_apres_repiquage: [60, 85] }
-gel: sensible                      # sensible / rustique / tres_rustique
-temperature: { min: 10, optimale: [20, 27], max: 35 }
-eau:
-  kc: { initial: 0.6, croissance: 1.15, fin: 0.8 }    # coefficients culturaux FAO-56
-  profondeur_racines_cm: 70
-espacement_cm: { rang: 70, plant: 50 }
-compagnons: [basil, carrot]
-a_eviter: [potato, fennel]
-rotation: { groupe: fruits, retour_ans: 4 }
-taches:
-  - { quoi: tuteurer, quand: { jours_apres_repiquage: 15 } }
-  - { quoi: egourmander, recurrence_jours: 7, periode: croissance }
-openplantbook_pid: solanum lycopersicum
-```
-
-- Pour démarrer : une **cinquantaine d'espèces courantes** (légumes, aromatiques, petits fruits, arbres fruitiers) rédigées à partir de connaissances agronomiques générales. Aucune base existante n'est recopiée.
-- Les coefficients d'eau (Kc) viennent de la méthode FAO-56, qui est publique.
-- Pour les sources externes, il faudra vérifier les licences. Les données d'OpenFarm, fermé en 2025, ont un statut flou. Le calendrier des cultures légumières de l'INRAE est sous licence Etalab 2.0, ce qui permet de le réutiliser en citant la source.
-- Un **catalogue personnel** (dans HA) permet d'ajouter ses propres variétés, sans passer par le dépôt.
+**Écartés pour l'instant :** notification du matin, travaux de saison généraux, calendrier lunaire, dépenses, export CSV/PDF, plusieurs jardiniers.
 
 ---
 
-## 4. Ce que voit l'utilisateur dans HA
+## 3. Principes
 
-| Entité | Exemple | Rôle |
+1. **Tout reste chez soi.** Aucun compte ni service en ligne obligatoire. Les services en ligne (Pl@ntNet, IA de vision) sont des options désactivées par défaut. Les données sont incluses dans les sauvegardes de HA.
+2. **Fonctionne sans capteur.** Avec seulement la météo de HA, on a le calendrier, les tâches et une estimation de l'arrosage. Chaque capteur ajouté rend le résultat plus précis.
+3. **Indépendant du climat.** Les dates du catalogue sont exprimées **par rapport aux dates de gel** du lieu. Ça fonctionne à Profondeville comme à Montréal, hémisphère sud compris.
+4. **L'application propose, HA exécute.** Vannes, ouvrants de serre et porte du poulailler sont pilotés par des automatisations et des blueprints, toujours avec une durée maximale et un état vérifié. L'application ne commande jamais un appareil directement.
+5. **Standards de la communauté :** code en anglais, interface traduite en anglais et en français dès le départ, configuration par l'interface, tests automatisés.
+
+---
+
+## 4. Architecture
+
+Sur le modèle de Frigate ou de Music Assistant : une **application** qui fait le travail, et une **intégration compagnon** qui l'expose dans HA.
+
+```
+┌─────────────── Application Homestead (conteneur, ingress) ───────────────┐
+│ Interface web : page « Jardin » dans la barre latérale (et dans l'app     │
+│ mobile HA) : plan, fiches, journal, récoltes, album, grainothèque,        │
+│ verger, poulailler, statistiques                                          │
+│ API REST + WebSocket (événements)                                         │
+│ Base SQLite : toutes les saisons, depuis la première                      │
+│ Photos et vignettes (dossier de données de l'application)                 │
+│ Traitement d'image : OpenCV, petits modèles ONNX, Pl@ntNet, IA en option  │
+│ Moteur : catalogue, calendrier, tâches, bilan hydrique, degrés-jours      │
+│ Lecture de HA : météo, sondes, caméras (API Supervisor ou jeton)          │
+└──────────────────────────────────┬────────────────────────────────────────┘
+                                   │ API locale
+┌──────────────────────────────────┴───────── Intégration compagnon (HACS) ─┐
+│ Découverte automatique de l'application                                    │
+│ Entités : liste de tâches, calendrier, stades, prochaine tâche, récolte    │
+│ prévue, besoin en eau, gel, serre, cuve, ponte, degrés-jours               │
+│ Actions : noter une récolte, une ponte, un arrosage, changer un stade      │
+│ Cartes de tableau de bord (JavaScript livré avec l'intégration)            │
+│ Blueprints : arrosage, gel, serre, porte du poulailler                     │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Pourquoi deux briques.** Les photos, le plan dessiné, l'historique pluriannuel et le traitement d'image demandent une base de données, du stockage et une interface riche : c'est le rôle d'une application. Mais une application ne peut créer ni liste de tâches ni calendrier dans HA : l'intégration s'en charge, pour que tout reste utilisable dans les automatisations et les tableaux de bord.
+
+**Installations prises en charge :**
+- **HA OS :** l'application s'installe depuis le magasin d'applications de HA (dépôt ajouté une fois), et l'intégration via HACS.
+- **HA Container ou Core :** même image Docker, lancée à côté de HA. On donne à l'intégration l'adresse de l'application, et à l'application un jeton d'accès à HA.
+
+**Chez nous :** application dans la VM HA OS (4 vCPU, 8 Go), pour profiter des sauvegardes de HA et de la page dans la barre latérale. Le développement et les tests se font sur le serveur Debian.
+
+### Dépôt unique `antoine28boel/homestead`
+
+```
+homestead/
+├── repository.yaml              ← dépôt d'applications HA
+├── homestead/                   ← application : config.yaml, Dockerfile, traductions
+├── server/                      ← serveur Python (FastAPI)
+│   ├── homestead_server/
+│   │   ├── catalog/  (espèces en YAML, repris de la phase 1)
+│   │   ├── planner.py (repris de la phase 1)
+│   │   ├── db/ (modèles, migrations)
+│   │   ├── api/  vision/  water/  ha/
+│   └── tests/
+├── frontend/                    ← interface web (Vue, construite en fichiers statiques)
+├── custom_components/homestead/ ← intégration compagnon (HACS)
+├── hacs.json
+└── docs/
+```
+
+L'application et l'intégration partagent un numéro de version, publié en même temps. On séparera les dépôts plus tard si la communauté le demande.
+
+### Choix techniques
+
+| Sujet | Choix | Pourquoi |
 |---|---|---|
-| `todo` (liste de tâches native) | `todo.<jardin>_taches` | « Semer les tomates sous abri », « Tuteurer les tomates (planche 2) », « Tailler le pommier ». Générée automatiquement ; cocher une tâche l'inscrit au journal |
-| `calendar` | `calendar.<jardin>` | Fenêtres de semis, de repiquage et de récolte, à afficher dans le calendrier de HA |
-| `sensor` par culture | stade, jours depuis le semis, récolte prévue, kg récoltés | Suivi de la culture |
-| `sensor` par espace | besoin en eau (mm), réserve du sol (%), degrés-jours | Arrosage et croissance |
-| `binary_sensor` par espace | à arroser, risque de gel, surchauffe de la serre | Déclencheurs des automatisations |
-| `sensor` / `number` troupeau | œufs aujourd'hui et sur 7 jours, ponte moyenne, niveau d'eau | Poulailler |
-| Actions (services) | `homestead.add_planting`, `homestead.log_watering`, `homestead.log_harvest`, `homestead.log_eggs`, `homestead.set_stage` | Utilisables dans les scripts, les automatisations et les boutons du tableau de bord |
-| Événements | `homestead_task_due`, `homestead_alert` | Pour les notifications |
-
-**Blueprints fournis :**
-- notification du matin « au jardin aujourd'hui » ;
-- alerte de gel : rentrer les pots, voiler, fermer la serre ;
-- serre trop chaude : ouvrir ou ventiler ;
-- arrosage par vanne avec durée maximale, sans arroser s'il a plu ou s'il va pleuvoir ;
-- porte du poulailler au lever et au coucher du soleil, avec vérification qu'elle est bien fermée.
+| Serveur | Python 3.13+, FastAPI, SQLAlchemy, Alembic | Même langage que HA et que le code déjà écrit ; migrations de base fiables d'une version à l'autre |
+| Base | SQLite dans le dossier de l'application | Aucun service à part, incluse dans les sauvegardes |
+| Interface | Vue 3 + Vite, construite en fichiers statiques servis par le serveur | Écosystème riche (plan interactif, graphiques), fonctionne derrière l'ingress de HA |
+| Image | Pillow, OpenCV, ONNX Runtime (processeur, sans carte graphique) | Tourne sur un PC ou un Raspberry Pi 4/5 |
+| Construction | GitHub Actions : images Docker amd64 et aarch64, tests, validation HACS et hassfest | Rien à installer chez soi |
 
 ---
 
-## 5. Le calcul de l'arrosage
-
-Pour chaque espace, un **bilan hydrique** quotidien, inspiré de FAO-56 :
+## 5. Modèle de données
 
 ```
-réserve du sol (mm) = réserve d'hier + pluie efficace + arrosages notés − ET0 × Kc(culture, stade)
+Jardin : dates de gel, position, sources météo
+├── Espaces : type (pleine terre, carré, serre, pots, verger, poulailler), forme et position
+│   sur le plan, surface, abri (semaines gagnées sur le gel), sondes, vanne, caméra
+├── Saisons (une par année)
+│   └── Cultures : espèce, variété, espace (et zone sur le plan), mode de démarrage,
+│       quantité, lot de graines, stade et dates, succession (semis échelonnés)
+│       ├── Journal : arrosage, apport, traitement, observation, intervention
+│       ├── Récoltes : date, poids ou nombre
+│       └── Photos : date, culture ou espace, analyses (surface verte, identification, diagnostic)
+├── Grainothèque : lots (espèce, variété, fournisseur, quantité, date de péremption)
+├── Vivaces et arbres : espèce, variété, porte-greffe, plantation, position ;
+│   tailles, traitements, floraisons, greffes, récoltes (d'année en année)
+├── Troupeau : poules (nom, race, naissance, arrivée, départ), pontes quotidiennes, soins
+└── Catalogue personnel : variétés et espèces ajoutées par l'utilisateur
 ```
 
-- **ET0** (évapotranspiration de référence) : calculée à partir de la météo de HA (température min et max, et rayonnement s'il est disponible) avec la méthode de Hargreaves, ou lue dans Smart Irrigation s'il est installé.
-- **Kc** : la moyenne des cultures présentes dans l'espace, selon leur stade. C'est ce qui nous distingue de Smart Irrigation.
-- **Serre / abri** : pas de pluie, ET0 corrigée par la température intérieure.
-- **Capteur d'humidité du sol présent** : il prime sur le calcul, qui est recalé sur sa mesure. Le calcul sert alors de garde-fou si le capteur tombe en panne ou se décharge.
-- **Résultat :** « arroser 12 mm » (→ litres selon la surface, → minutes si le débit de la vanne est connu).
+### Catalogue
+
+- Le format de la phase 1 est conservé (voir [catalog.md](catalog.md)).
+- Champs à ajouter :
+  - **associations :** compagnons et plantes à éviter ;
+  - **rotation :** groupe et nombre d'années avant le retour au même endroit ;
+  - **eau :** coefficients culturaux Kc par stade (FAO-56) et profondeur des racines ;
+  - **degrés-jours :** température de base et somme nécessaire ;
+  - **conseils :** courts textes traduits ;
+  - **succession :** intervalle conseillé entre deux semis.
+- Nouvelles familles de fichiers : arbres fruitiers, petits fruits, aromatiques vivaces (taille, traitements, floraison, groupes de pollinisation).
+- Les valeurs sont rédigées à partir de connaissances agronomiques générales ou de sources dont la licence permet la réutilisation (calendrier légumier de l'INRAE sous Etalab 2.0, FAO-56). Aucune base propriétaire n'est recopiée.
 
 ---
 
-## 6. Interface
+## 6. Calculs
 
-- **Phase 1** : uniquement les cartes natives (liste de tâches, calendrier, tuiles). Aucune dépendance.
-- **Phase suivante :** un **panneau latéral « Jardin »** pour gérer les espaces, les cultures et le journal confortablement (comme le panneau de Smart Irrigation), puis une **carte de tableau de bord** : plan du jardin, chronologie des cultures.
-- Pour notre maison : des fiches Bubble Card générées par `tools/dashboard_app.py`, dans le style du tableau de bord « Smartphones » (le décor de saison d'`accueil_deco.py` pourrait montrer le potager réel).
+### Bilan hydrique (par espace, chaque jour)
 
----
+```
+réserve du sol (mm) = réserve d'hier + pluie efficace + arrosages − ET0 × Kc(cultures, stades)
+```
 
-## 7. Étapes proposées
+- **ET0** : méthode de Hargreaves à partir de la météo de HA, ou valeur lue dans Smart Irrigation s'il est installé.
+- **Kc** : moyenne des cultures de l'espace selon leur stade.
+- **Serre :** pas de pluie ; température intérieure si une sonde existe.
+- **Sonde d'humidité du sol :** elle prime, et le calcul est recalé sur sa mesure. Le calcul reste un garde-fou si la sonde se décharge ou tombe en panne.
+- **Résultat :** des mm, convertis en litres (surface) puis en minutes (débit de la vanne).
+- **Cuve :** litres disponibles, et alerte si elle ne suffit pas pour l'arrosage prévu.
 
-| Phase | Contenu | Résultat |
+### Degrés-jours
+
+Somme quotidienne de (température moyenne − température de base de l'espèce), depuis le semis ou la plantation. Elle affine la date de récolte prévue d'une année à l'autre.
+
+### Rotation et associations
+
+Au moment de placer une culture, l'interface signale :
+- une culture de la même famille ou du même groupe à cet endroit dans les N dernières années ;
+- un mauvais voisin sur le plan.
+
+### Traitement d'image
+
+| Fonction | Méthode | Où |
 |---|---|---|
-| 0. Fondations | Nom, dépôt GitHub, squelette d'intégration, tests (`pytest-homeassistant-custom-component`), validation HACS et hassfest automatisée | S'installe dans HA et ne fait encore rien |
-| 1. Calendrier | Profil climatique, catalogue de 30 à 50 espèces, espaces, cultures, cycle, liste de tâches, calendrier, traductions fr/en | Utilisable chez nous dès cet hiver pour planifier la saison 2027 |
-| 2. Capteurs et arrosage | Bilan hydrique, risques de gel et de surchauffe, blueprints, capteurs d'humidité du sol, vannes | Prêt pour les premiers semis sous abri (février-mars 2027) |
-| 3. Verger et poulailler | Vivaces et arbres (taille, traitements), troupeau, œufs, porte | Prêt à l'arrivée des poules |
-| 4. Communauté | Panneau et carte, catalogue enrichi, néerlandais et allemand, documentation, demande d'inscription dans la liste par défaut de HACS | Version 1.0 publique |
-
-Avant de publier : tester sur une installation HA vierge (conteneur de développement) et pas seulement chez nous.
+| Album, comparaison d'une saison à l'autre | Classement par culture, espace et date ; vignettes | Local |
+| Timelapse | Image de la caméra HA à heure fixe, montage vidéo | Local |
+| Surface verte | Indice de vert (ExG) et segmentation OpenCV, sur des photos cadrées pareil | Local |
+| Identification | API Pl@ntNet (clé gratuite, quota journalier) | En ligne, option |
+| Maladies et ravageurs | IA de vision (fiable) ; petit modèle local en complément (fiabilité limitée sur des photos prises au jardin) | En ligne en option, ou local |
+| Maturité et comptage | Détection d'objets (modèle type YOLO) | Local, expérimental, en dernier |
 
 ---
 
-## 8. Questions à trancher
+## 7. Ce que voit l'utilisateur dans HA
 
-1. ~~**Nom**~~ : **Homestead**, domaine `homestead` (27/10/2026).
-2. **Dépôt GitHub** : sur ton compte personnel ? Je prépare le code, mais c'est toi qui crées le dépôt et qui publies.
-3. ~~**Plant-it**~~ : supprimé par le propriétaire le 27/10/2026. Il n'y a rien à importer.
-4. **Capteurs prévus** : quels modèles d'humidité du sol, de station météo et de vannes (Zigbee, ESPHome, Gardena…) ? Pas bloquant pour la phase 1, mais utile pour bien concevoir la phase 2.
-5. ~~**Le jardin lui-même**~~ (27/10/2026) : un carré potager surélevé, une serre avec 2 bacs de culture et un potager d'environ 8 × 4 m.
+| Entité | Rôle |
+|---|---|
+| `todo` | Tâches des 14 prochains jours. Cocher une tâche fait avancer la culture |
+| `calendar` | Périodes de semis, de mise en place, de récolte, de taille et de traitement |
+| `select` par culture | Stade |
+| `sensor` par culture | Prochaine tâche, échéance, récolte prévue, kg récoltés, degrés-jours |
+| `sensor` / `binary_sensor` par espace | Besoin en eau, réserve du sol, à arroser, risque de gel, surchauffe, « à semer maintenant » |
+| `sensor` jardin | Niveau de la cuve, récoltes de la saison |
+| `sensor` poulailler | Œufs du jour et des 7 derniers jours, niveaux d'eau et de grain, prochain soin |
+| Actions | `homestead.log_harvest`, `homestead.log_eggs`, `homestead.log_watering`, `homestead.set_stage`… |
+
+**Blueprints :**
+- alerte de gel ;
+- serre trop chaude (ventilation, ouvrants) ;
+- arrosage par vanne : durée maximale, pas d'arrosage s'il a plu ou s'il va pleuvoir ;
+- porte du poulailler au lever et au coucher du soleil, avec vérification de la fermeture.
+
+---
+
+## 8. Phases
+
+| Phase | Contenu | Visé pour |
+|---|---|---|
+| ~~0–1~~ | ~~Intégration seule : dates de gel, espaces, cultures, tâches, calendrier (v0.2)~~ | Faites le 27/10/2026 ; le moteur est repris dans l'application |
+| **A. Socle** | Application (serveur, base, interface derrière l'ingress) ; espaces, saisons, cultures, stades, journal, récoltes ; saisie rapide sur smartphone ; intégration compagnon (découverte, tâches, calendrier, stades, capteurs) ; images Docker et dépôt d'applications | Janvier 2027 |
+| **B. Planification** | Plan dessiné, rotation, associations, semis échelonnés, grainothèque, conseils par culture | Avant les semis de février |
+| **C. Eau et climat** | Bilan hydrique, degrés-jours, sondes, gel, serre, cuve, vannes et blueprints | Mars–avril 2027 |
+| **D. Photos** | Album, timelapse, surface verte, identification, diagnostic par IA, maladies ; maturité en dernier | Printemps 2027 |
+| **E. Verger et vivaces** | Arbres, petits fruits, aromatiques, taille, traitements, floraison et pollinisation, greffes | Été 2027 |
+| **F. Poulailler** | Registre, ponte, porte, niveaux, soins, température et éclairage, caméra | À l'arrivée des poules |
+| **G. Finitions** | Statistiques de rendement, cartes de tableau de bord, documentation, publication | En continu |
+
+Avant chaque publication : tests automatisés, puis essai sur une installation HA vierge, pas seulement chez nous.
+
+---
+
+## 9. Questions ouvertes
+
+1. **Capteurs et matériel** (phase C) : sondes d'humidité du sol, station météo ou pluviomètre, vannes, capteur de niveau de la cuve, ouvrants de serre. Quels modèles (Zigbee, ESPHome, Gardena…) ?
+2. **Caméras** (phase D) : une caméra est-elle prévue pour la serre ou le potager ?
+3. **IA de vision** (phase D) : quel service, avec quelle clé ? Ce sera une option, désactivée par défaut.
+4. **Dépôt public** : HACS et le magasin d'applications de HA exigent un dépôt public. À rendre public au plus tard pour le premier essai chez nous.
+
+*Décisions déjà prises : nom Homestead (27/10) ; Plant-it supprimé (27/10) ; jardin = un carré surélevé, une serre avec 2 bacs, un potager d'environ 8 × 4 m (27/10) ; périmètre, architecture et ordre des phases (27/10).*
