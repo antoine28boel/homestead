@@ -1,0 +1,12 @@
+{
+  "domain": "homestead",
+  "name": "Homestead",
+  "codeowners": ["@antoine28boel"],
+  "config_flow": true,
+  "documentation": "https://github.com/antoine28boel/homestead",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/antoine28boel/homestead/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

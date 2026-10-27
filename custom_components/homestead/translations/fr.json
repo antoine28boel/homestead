@@ -1,0 +1,41 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Nouveau jardin",
+        "description": "Les calendriers de culture sont calculés à partir des dates moyennes de gel de votre jardin. Seuls le jour et le mois comptent ; l'année est ignorée.",
+        "data": {
+          "name": "Nom",
+          "last_frost": "Dernières gelées de printemps",
+          "first_frost": "Premières gelées d'automne"
+        },
+        "data_description": {
+          "name": "Par exemple : Jardin, Potager, Maison de campagne.",
+          "last_frost": "Date moyenne des dernières gelées. Le service météo de votre pays ou un cercle horticole la publie généralement.",
+          "first_frost": "Date moyenne des premières gelées après l'été."
+        }
+      }
+    },
+    "error": {
+      "same_frost_dates": "Les dates des dernières et des premières gelées doivent être différentes."
+    },
+    "abort": {
+      "already_configured": "Un jardin porte déjà ce nom."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Dates de gel",
+        "description": "Seuls le jour et le mois comptent ; l'année est ignorée.",
+        "data": {
+          "last_frost": "Dernières gelées de printemps",
+          "first_frost": "Premières gelées d'automne"
+        }
+      }
+    },
+    "error": {
+      "same_frost_dates": "Les dates des dernières et des premières gelées doivent être différentes."
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "New garden",
+        "description": "Crop calendars are computed from the average frost dates of your garden. Only the day and month matter, the year is ignored.",
+        "data": {
+          "name": "Name",
+          "last_frost": "Last frost of spring",
+          "first_frost": "First frost of autumn"
+        },
+        "data_description": {
+          "name": "For example: Garden, Allotment, Country house.",
+          "last_frost": "Average date of the last frost. Your local weather service or gardening club usually publishes it.",
+          "first_frost": "Average date of the first frost after summer."
+        }
+      }
+    },
+    "error": {
+      "same_frost_dates": "The last and first frost dates must be different."
+    },
+    "abort": {
+      "already_configured": "A garden with this name already exists."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Frost dates",
+        "description": "Only the day and month matter, the year is ignored.",
+        "data": {
+          "last_frost": "Last frost of spring",
+          "first_frost": "First frost of autumn"
+        }
+      }
+    },
+    "error": {
+      "same_frost_dates": "The last and first frost dates must be different."
+    }
+  }
+}
