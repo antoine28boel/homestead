@@ -1,0 +1,13 @@
+id: kale
+names: {en: Kale, fr: Chou kale, nl: Boerenkool, de: Grünkohl}
+family: brassicaceae
+frost: hardy
+sow_indoors:
+  - {start: -4, end: 6}
+transplant:
+  - {start: 2, end: 10}
+germination_days: [5, 10]
+harvest: {after: transplant, days: [55, 75], weeks: 20}
+spacing_cm: {plant: 45, row: 60}
+tasks:
+  - {id: net, after: transplant, days: 0, label: {en: Cover with insect netting, fr: Protéger avec un filet anti-insectes}}

@@ -1,0 +1,11 @@
+id: beetroot
+names: {en: Beetroot, fr: Betterave rouge, nl: Rode biet, de: Rote Bete}
+family: amaranthaceae
+frost: half_hardy
+sow_direct:
+  - {start: -2, end: 8}
+germination_days: [7, 14]
+harvest: {after: sowing, days: [60, 90], weeks: 8}
+spacing_cm: {plant: 10, row: 30}
+tasks:
+  - {id: thin, after: sowing, days: 25, label: {en: Thin out, fr: Éclaircir}}

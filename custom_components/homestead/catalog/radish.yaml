@@ -1,0 +1,9 @@
+id: radish
+names: {en: Radish, fr: Radis, nl: Radijs, de: Radieschen}
+family: brassicaceae
+frost: hardy
+sow_direct:
+  - {start: -10, end: 16}
+germination_days: [4, 7]
+harvest: {after: sowing, days: [25, 35], weeks: 2}
+spacing_cm: {plant: 3, row: 15}

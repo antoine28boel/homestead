@@ -1,0 +1,13 @@
+id: melon
+names: {en: Melon, fr: Melon, nl: Meloen, de: Melone}
+family: cucurbitaceae
+frost: tender
+sow_indoors:
+  - {start: -5, end: -4}
+transplant:
+  - {start: 2, end: 4}
+germination_days: [5, 10]
+harvest: {after: transplant, days: [75, 95], weeks: 4}
+spacing_cm: {plant: 60, row: 100}
+tasks:
+  - {id: pinch, after: transplant, days: 14, label: {en: Pinch out the stems, fr: Pincer les tiges}}

@@ -1,0 +1,11 @@
+id: carrot
+names: {en: Carrot, fr: Carotte, nl: Wortel, de: Karotte}
+family: apiaceae
+frost: hardy
+sow_direct:
+  - {start: -4, end: 8}
+germination_days: [10, 21]
+harvest: {after: sowing, days: [70, 110], weeks: 8}
+spacing_cm: {plant: 3, row: 25}
+tasks:
+  - {id: thin, after: sowing, days: 30, label: {en: Thin out, fr: Éclaircir}}

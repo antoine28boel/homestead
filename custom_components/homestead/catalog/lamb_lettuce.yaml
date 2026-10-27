@@ -1,0 +1,9 @@
+id: lamb_lettuce
+names: {en: Lamb's lettuce, fr: Mâche, nl: Veldsla, de: Feldsalat}
+family: caprifoliaceae
+frost: hardy
+sow_direct:
+  - {start: -12, end: -6, ref: first_frost}
+germination_days: [7, 14]
+harvest: {after: sowing, days: [70, 100], weeks: 12}
+spacing_cm: {plant: 5, row: 15}

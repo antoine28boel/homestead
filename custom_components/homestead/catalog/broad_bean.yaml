@@ -1,0 +1,11 @@
+id: broad_bean
+names: {en: Broad bean, fr: Fève, nl: Tuinboon, de: Dicke Bohne}
+family: fabaceae
+frost: hardy
+sow_direct:
+  - {start: -10, end: -5}
+germination_days: [7, 14]
+harvest: {after: sowing, days: [90, 110], weeks: 4}
+spacing_cm: {plant: 15, row: 45}
+tasks:
+  - {id: pinch, after: sowing, days: 60, label: {en: Pinch out the tips, fr: Pincer les extrémités}}

@@ -1,0 +1,11 @@
+id: pole_bean
+names: {en: Pole bean, fr: Haricot à rames, nl: Stokboon, de: Stangenbohne}
+family: fabaceae
+frost: tender
+sow_direct:
+  - {start: 1, end: 5}
+germination_days: [7, 12]
+harvest: {after: sowing, days: [65, 80], weeks: 8}
+spacing_cm: {plant: 15, row: 60}
+tasks:
+  - {id: support, after: sowing, days: 7, label: {en: Put up the poles, fr: Installer les rames}}

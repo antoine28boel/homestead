@@ -1,0 +1,13 @@
+id: parsley
+names: {en: Parsley, fr: Persil, nl: Peterselie, de: Petersilie}
+family: apiaceae
+frost: hardy
+sow_indoors:
+  - {start: -10, end: -4}
+sow_direct:
+  - {start: -4, end: 8}
+transplant:
+  - {start: -2, end: 4}
+germination_days: [14, 28]
+harvest: {after: sowing, days: [70, 90], weeks: 30}
+spacing_cm: {plant: 15, row: 25}

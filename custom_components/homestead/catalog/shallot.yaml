@@ -1,0 +1,8 @@
+id: shallot
+names: {en: Shallot, fr: Échalote, nl: Sjalot, de: Schalotte}
+family: amaryllidaceae
+frost: hardy
+transplant:
+  - {start: -10, end: -6}
+harvest: {after: transplant, days: [100, 130], weeks: 3}
+spacing_cm: {plant: 15, row: 25}

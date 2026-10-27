@@ -1,0 +1,10 @@
+id: spinach
+names: {en: Spinach, fr: Épinard, nl: Spinazie, de: Spinat}
+family: amaranthaceae
+frost: hardy
+sow_direct:
+  - {start: -8, end: -3}
+  - {start: -8, end: -5, ref: first_frost}
+germination_days: [7, 14]
+harvest: {after: sowing, days: [40, 60], weeks: 4}
+spacing_cm: {plant: 10, row: 30}

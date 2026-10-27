@@ -1,0 +1,13 @@
+id: eggplant
+names: {en: Eggplant (aubergine), fr: Aubergine, nl: Aubergine, de: Aubergine}
+family: solanaceae
+frost: tender
+sow_indoors:
+  - {start: -10, end: -8}
+transplant:
+  - {start: 2, end: 4}
+germination_days: [10, 20]
+harvest: {after: transplant, days: [75, 100], weeks: 8}
+spacing_cm: {plant: 50, row: 70}
+tasks:
+  - {id: stake, after: transplant, days: 14, label: {en: Stake, fr: Tuteurer}}

@@ -1,0 +1,13 @@
+id: cabbage
+names: {en: Cabbage, fr: Chou pommé, nl: Sluitkool, de: Kopfkohl}
+family: brassicaceae
+frost: hardy
+sow_indoors:
+  - {start: -10, end: 0}
+transplant:
+  - {start: -4, end: 6}
+germination_days: [5, 10]
+harvest: {after: transplant, days: [70, 120], weeks: 6}
+spacing_cm: {plant: 50, row: 60}
+tasks:
+  - {id: net, after: transplant, days: 0, label: {en: Cover with insect netting, fr: Protéger avec un filet anti-insectes}}

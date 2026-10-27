@@ -1,0 +1,13 @@
+id: lettuce
+names: {en: Lettuce, fr: Laitue, nl: Sla, de: Salat}
+family: asteraceae
+frost: half_hardy
+sow_indoors:
+  - {start: -10, end: 12}
+sow_direct:
+  - {start: -4, end: 12}
+transplant:
+  - {start: -6, end: 14}
+germination_days: [4, 10]
+harvest: {after: sowing, days: [55, 80], weeks: 3}
+spacing_cm: {plant: 25, row: 30}

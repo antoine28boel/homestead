@@ -1,0 +1,12 @@
+id: turnip
+names: {en: Turnip, fr: Navet, nl: Raap, de: Speiserübe}
+family: brassicaceae
+frost: hardy
+sow_direct:
+  - {start: -4, end: 2}
+  - {start: -12, end: -8, ref: first_frost}
+germination_days: [4, 10]
+harvest: {after: sowing, days: [45, 70], weeks: 6}
+spacing_cm: {plant: 10, row: 30}
+tasks:
+  - {id: thin, after: sowing, days: 20, label: {en: Thin out, fr: Éclaircir}}

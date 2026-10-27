@@ -1,0 +1,15 @@
+id: squash
+names: {en: Winter squash and pumpkin, fr: Courge et potiron, nl: Pompoen, de: Kürbis}
+family: cucurbitaceae
+frost: tender
+sow_indoors:
+  - {start: -4, end: -3}
+sow_direct:
+  - {start: 1, end: 3}
+transplant:
+  - {start: 1, end: 3}
+germination_days: [5, 10]
+harvest: {after: sowing, days: [100, 130], weeks: 4}
+spacing_cm: {plant: 100, row: 150}
+tasks:
+  - {id: mulch, after: transplant, days: 14, label: {en: Mulch, fr: Pailler}}

@@ -1,0 +1,30 @@
+{
+  "entity": {
+    "calendar": {
+      "calendar": { "default": "mdi:calendar-month" }
+    },
+    "select": {
+      "stage": {
+        "default": "mdi:sprout",
+        "state": {
+          "planned": "mdi:calendar-clock",
+          "sown": "mdi:seed",
+          "transplanted": "mdi:shovel",
+          "growing": "mdi:sprout",
+          "harvesting": "mdi:basket",
+          "finished": "mdi:check-circle"
+        }
+      }
+    },
+    "sensor": {
+      "harvest": { "default": "mdi:basket" },
+      "next_task": { "default": "mdi:shovel" },
+      "next_task_due": { "default": "mdi:calendar-alert" },
+      "plantings": { "default": "mdi:flower" },
+      "sow_now": { "default": "mdi:seed" }
+    },
+    "todo": {
+      "tasks": { "default": "mdi:clipboard-list" }
+    }
+  }
+}

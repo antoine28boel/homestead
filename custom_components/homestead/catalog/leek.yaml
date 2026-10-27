@@ -1,0 +1,13 @@
+id: leek
+names: {en: Leek, fr: Poireau, nl: Prei, de: Lauch}
+family: amaryllidaceae
+frost: hardy
+sow_indoors:
+  - {start: -10, end: -6}
+transplant:
+  - {start: 2, end: 8}
+germination_days: [10, 20]
+harvest: {after: transplant, days: [100, 150], weeks: 16}
+spacing_cm: {plant: 15, row: 30}
+tasks:
+  - {id: earth_up, after: transplant, days: 45, label: {en: Earth up, fr: Butter}}

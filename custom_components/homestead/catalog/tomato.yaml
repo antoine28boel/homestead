@@ -1,0 +1,14 @@
+id: tomato
+names: {en: Tomato, fr: Tomate, nl: Tomaat, de: Tomate}
+family: solanaceae
+frost: tender
+sow_indoors:
+  - {start: -8, end: -6}
+transplant:
+  - {start: 1, end: 3}
+germination_days: [6, 12]
+harvest: {after: transplant, days: [60, 85], weeks: 10}
+spacing_cm: {plant: 50, row: 70}
+tasks:
+  - {id: stake, after: transplant, days: 7, label: {en: Stake, fr: Tuteurer}}
+  - {id: side_shoots, after: transplant, days: 21, label: {en: Remove side shoots, fr: Supprimer les gourmands}}

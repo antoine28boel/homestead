@@ -1,0 +1,13 @@
+id: pepper
+names: {en: Pepper and chilli, fr: Poivron et piment, nl: Paprika en peper, de: Paprika und Chili}
+family: solanaceae
+frost: tender
+sow_indoors:
+  - {start: -10, end: -8}
+transplant:
+  - {start: 2, end: 4}
+germination_days: [10, 20]
+harvest: {after: transplant, days: [70, 90], weeks: 8}
+spacing_cm: {plant: 45, row: 60}
+tasks:
+  - {id: stake, after: transplant, days: 14, label: {en: Stake, fr: Tuteurer}}

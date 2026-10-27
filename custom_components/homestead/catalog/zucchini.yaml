@@ -1,0 +1,15 @@
+id: zucchini
+names: {en: Zucchini (courgette), fr: Courgette, nl: Courgette, de: Zucchini}
+family: cucurbitaceae
+frost: tender
+sow_indoors:
+  - {start: -4, end: -3}
+sow_direct:
+  - {start: 1, end: 4}
+transplant:
+  - {start: 1, end: 3}
+germination_days: [5, 10]
+harvest: {after: sowing, days: [50, 65], weeks: 10}
+spacing_cm: {plant: 80, row: 100}
+tasks:
+  - {id: mulch, after: transplant, days: 14, label: {en: Mulch, fr: Pailler}}

@@ -37,5 +37,127 @@
     "error": {
       "same_frost_dates": "Les dates des dernières et des premières gelées doivent être différentes."
     }
+  },
+  "config_subentries": {
+    "space": {
+      "entry_type": "Espace",
+      "initiate_flow": {
+        "user": "Ajouter un espace"
+      },
+      "step": {
+        "user": {
+          "title": "Nouvel espace",
+          "description": "Une planche, un carré surélevé, une serre ou un ensemble de pots.",
+          "data": {
+            "name": "Nom",
+            "space_type": "Type",
+            "frost_shift": "Semaines gagnées sur le gel",
+            "area": "Surface (m²)"
+          },
+          "data_description": {
+            "frost_shift": "Combien de semaines plus tôt au printemps, et plus tard à l'automne, on peut cultiver ici par rapport à la pleine terre. Laisser vide pour la valeur habituelle du type : 4 pour une serre non chauffée, 1 pour un carré surélevé, 0 sinon.",
+            "area": "Facultatif. Servira plus tard à convertir les besoins d'arrosage en litres."
+          }
+        },
+        "reconfigure": {
+          "title": "Modifier l'espace",
+          "data": {
+            "name": "Nom",
+            "space_type": "Type",
+            "frost_shift": "Semaines gagnées sur le gel",
+            "area": "Surface (m²)"
+          },
+          "data_description": {
+            "frost_shift": "Laisser vide pour la valeur habituelle du type : 4 pour une serre non chauffée, 1 pour un carré surélevé, 0 sinon."
+          }
+        }
+      },
+      "error": {
+        "name_taken": "Un autre espace porte déjà ce nom."
+      },
+      "abort": {
+        "reconfigure_successful": "L'espace a été modifié."
+      }
+    },
+    "planting": {
+      "entry_type": "Culture",
+      "initiate_flow": {
+        "user": "Ajouter une culture"
+      },
+      "step": {
+        "user": {
+          "title": "Nouvelle culture",
+          "description": "Choisissez où elle poussera et ce que c'est.",
+          "data": {
+            "space": "Espace",
+            "species": "Culture"
+          }
+        },
+        "details": {
+          "title": "{species} – {space}",
+          "description": "Choisissez comment la démarrer. Les dates tiennent compte de vos dates de gel et de l'espace.",
+          "data": {
+            "start": "Démarrage",
+            "variety": "Variété",
+            "quantity": "Nombre de plants"
+          },
+          "data_description": {
+            "variety": "Facultatif, par exemple Cœur de bœuf.",
+            "quantity": "Facultatif."
+          }
+        },
+        "reconfigure": {
+          "title": "Modifier la culture",
+          "data": {
+            "space": "Espace",
+            "variety": "Variété",
+            "quantity": "Nombre de plants"
+          }
+        }
+      },
+      "abort": {
+        "no_spaces": "Ajoutez d'abord un espace (une planche, une serre…).",
+        "not_loaded": "Le jardin n'est pas chargé. Activez-le, puis réessayez.",
+        "reconfigure_successful": "La culture a été modifiée."
+      }
+    }
+  },
+  "selector": {
+    "space_type": {
+      "options": {
+        "bed": "Pleine terre",
+        "raised_bed": "Carré surélevé",
+        "greenhouse": "Serre ou tunnel",
+        "container": "Pots et bacs"
+      }
+    }
+  },
+  "entity": {
+    "calendar": {
+      "calendar": { "name": "Calendrier" }
+    },
+    "select": {
+      "stage": {
+        "name": "Stade",
+        "state": {
+          "planned": "Prévue",
+          "sown": "Semée",
+          "transplanted": "Mise en place",
+          "growing": "En croissance",
+          "harvesting": "En récolte",
+          "finished": "Terminée"
+        }
+      }
+    },
+    "sensor": {
+      "harvest": { "name": "Récolte prévue" },
+      "next_task": { "name": "Prochaine tâche" },
+      "next_task_due": { "name": "Échéance de la prochaine tâche" },
+      "plantings": { "name": "Cultures" },
+      "sow_now": { "name": "À semer ou planter maintenant" }
+    },
+    "todo": {
+      "tasks": { "name": "Tâches" }
+    }
   }
 }

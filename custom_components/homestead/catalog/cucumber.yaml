@@ -1,0 +1,15 @@
+id: cucumber
+names: {en: Cucumber, fr: Concombre, nl: Komkommer, de: Gurke}
+family: cucurbitaceae
+frost: tender
+sow_indoors:
+  - {start: -4, end: -3}
+sow_direct:
+  - {start: 1, end: 4}
+transplant:
+  - {start: 1, end: 3}
+germination_days: [5, 10]
+harvest: {after: sowing, days: [55, 70], weeks: 8}
+spacing_cm: {plant: 40, row: 80}
+tasks:
+  - {id: train, after: transplant, days: 14, label: {en: Train on the trellis, fr: Palisser}}

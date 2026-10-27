@@ -154,4 +154,4 @@ Avant de publier : tester sur une installation HA vierge (conteneur de développ
 2. **Dépôt GitHub** : sur ton compte personnel ? Je prépare le code, mais c'est toi qui crées le dépôt et qui publies.
 3. ~~**Plant-it**~~ : supprimé par le propriétaire le 27/10/2026. Il n'y a rien à importer.
 4. **Capteurs prévus** : quels modèles d'humidité du sol, de station météo et de vannes (Zigbee, ESPHome, Gardena…) ? Pas bloquant pour la phase 1, mais utile pour bien concevoir la phase 2.
-5. **Le jardin lui-même** : la liste des espaces (combien de planches, la taille de la serre, les arbres du verger) permettra de choisir les premières espèces du catalogue et de tester avec de vraies données.
+5. ~~**Le jardin lui-même**~~ (27/10/2026) : un carré potager surélevé, une serre avec 2 bacs de culture et un potager d'environ 8 × 4 m.

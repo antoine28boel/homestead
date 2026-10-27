@@ -2,7 +2,20 @@
 
 A Home Assistant integration for the whole homestead: vegetable garden, greenhouse, orchard and chicken coop.
 
-> **Status: early development.** Version 0.1 only creates a garden and stores its frost dates. Nothing useful happens yet.
+> **Status: early development (0.2).** The crop calendar works: spaces, plantings, stages, to-do list and calendar. Watering, orchard and coop come next.
+
+## What it does today
+
+- **A garden** with its average frost dates, which every date is computed from.
+- **Spaces** (open ground, raised bed, greenhouse, pots), added from the garden's page. Sheltered spaces gain weeks on frost.
+- **Plantings**: pick a space and a crop from the [catalogue](docs/catalog.md) (30 common vegetables and herbs), then how and when to start it. Each planting is a device with:
+  - a **stage** selector: planned, sown, planted out, growing, harvesting, finished;
+  - its **next task** and when it is due;
+  - the **expected harvest** date.
+- **A to-do list** of the tasks due in the next two weeks: sow, transplant, stake, earth up, start harvesting… Ticking a task moves its planting to the next stage. You can add your own items too.
+- **A calendar** of sowing, planting-out and harvest periods.
+- Per space, the crops **that can be sown or planted now**.
+- English and French.
 
 ## Goals
 

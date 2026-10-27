@@ -1,0 +1,13 @@
+id: chard
+names: {en: Swiss chard, fr: Blette, nl: Snijbiet, de: Mangold}
+family: amaranthaceae
+frost: half_hardy
+sow_indoors:
+  - {start: -6, end: -2}
+sow_direct:
+  - {start: -2, end: 8}
+transplant:
+  - {start: 0, end: 4}
+germination_days: [7, 14]
+harvest: {after: sowing, days: [50, 60], weeks: 20}
+spacing_cm: {plant: 30, row: 40}

@@ -1,0 +1,13 @@
+id: basil
+names: {en: Basil, fr: Basilic, nl: Basilicum, de: Basilikum}
+family: lamiaceae
+frost: tender
+sow_indoors:
+  - {start: -6, end: -2}
+transplant:
+  - {start: 2, end: 4}
+germination_days: [5, 10]
+harvest: {after: transplant, days: [21, 35], weeks: 12}
+spacing_cm: {plant: 25, row: 30}
+tasks:
+  - {id: pinch, after: transplant, days: 14, label: {en: Pinch out the tips, fr: Pincer les extrémités}}

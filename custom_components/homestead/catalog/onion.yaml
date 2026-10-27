@@ -1,0 +1,8 @@
+id: onion
+names: {en: Onion (sets), fr: Oignon (bulbilles), nl: Ui (plantuitjes), de: Zwiebel (Steckzwiebeln)}
+family: amaryllidaceae
+frost: hardy
+transplant:
+  - {start: -6, end: -2}
+harvest: {after: transplant, days: [100, 130], weeks: 3}
+spacing_cm: {plant: 10, row: 25}

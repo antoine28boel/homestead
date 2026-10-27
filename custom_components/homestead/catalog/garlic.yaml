@@ -1,0 +1,9 @@
+id: garlic
+names: {en: Garlic, fr: Ail, nl: Knoflook, de: Knoblauch}
+family: amaryllidaceae
+frost: hardy
+transplant:
+  - {start: 0, end: 5, ref: first_frost, harvest_days: [230, 270]}
+  - {start: -10, end: -6, harvest_days: [100, 130]}
+harvest: {after: transplant, days: [230, 270], weeks: 3}
+spacing_cm: {plant: 10, row: 25}

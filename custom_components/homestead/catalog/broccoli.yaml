@@ -1,0 +1,13 @@
+id: broccoli
+names: {en: Broccoli, fr: Brocoli, nl: Broccoli, de: Brokkoli}
+family: brassicaceae
+frost: hardy
+sow_indoors:
+  - {start: -8, end: 4}
+transplant:
+  - {start: -4, end: 8}
+germination_days: [5, 10]
+harvest: {after: transplant, days: [60, 90], weeks: 4}
+spacing_cm: {plant: 45, row: 60}
+tasks:
+  - {id: net, after: transplant, days: 0, label: {en: Cover with insect netting, fr: Protéger avec un filet anti-insectes}}

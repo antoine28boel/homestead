@@ -1,0 +1,11 @@
+id: pea
+names: {en: Pea, fr: Pois, nl: Erwt, de: Erbse}
+family: fabaceae
+frost: hardy
+sow_direct:
+  - {start: -8, end: -2}
+germination_days: [7, 14]
+harvest: {after: sowing, days: [70, 90], weeks: 4}
+spacing_cm: {plant: 5, row: 40}
+tasks:
+  - {id: support, after: sowing, days: 14, label: {en: Put up supports, fr: Ramer}}

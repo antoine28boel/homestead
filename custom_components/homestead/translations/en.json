@@ -37,5 +37,127 @@
     "error": {
       "same_frost_dates": "The last and first frost dates must be different."
     }
+  },
+  "config_subentries": {
+    "space": {
+      "entry_type": "Space",
+      "initiate_flow": {
+        "user": "Add a space"
+      },
+      "step": {
+        "user": {
+          "title": "New space",
+          "description": "A bed, a raised bed, a greenhouse or a group of pots.",
+          "data": {
+            "name": "Name",
+            "space_type": "Type",
+            "frost_shift": "Weeks gained on frost",
+            "area": "Area (m²)"
+          },
+          "data_description": {
+            "frost_shift": "How many weeks earlier in spring, and later in autumn, you can grow here than in open ground. Leave empty for the usual value of the type: 4 for an unheated greenhouse, 1 for a raised bed, 0 otherwise.",
+            "area": "Optional. Used later to turn watering needs into litres."
+          }
+        },
+        "reconfigure": {
+          "title": "Change the space",
+          "data": {
+            "name": "Name",
+            "space_type": "Type",
+            "frost_shift": "Weeks gained on frost",
+            "area": "Area (m²)"
+          },
+          "data_description": {
+            "frost_shift": "Leave empty for the usual value of the type: 4 for an unheated greenhouse, 1 for a raised bed, 0 otherwise."
+          }
+        }
+      },
+      "error": {
+        "name_taken": "Another space already has this name."
+      },
+      "abort": {
+        "reconfigure_successful": "The space has been updated."
+      }
+    },
+    "planting": {
+      "entry_type": "Planting",
+      "initiate_flow": {
+        "user": "Add a planting"
+      },
+      "step": {
+        "user": {
+          "title": "New planting",
+          "description": "Choose where it will grow and what it is.",
+          "data": {
+            "space": "Space",
+            "species": "Crop"
+          }
+        },
+        "details": {
+          "title": "{species} in {space}",
+          "description": "Choose how to start it. The dates take your frost dates and the space into account.",
+          "data": {
+            "start": "Start",
+            "variety": "Variety",
+            "quantity": "Number of plants"
+          },
+          "data_description": {
+            "variety": "Optional, for example Moneymaker.",
+            "quantity": "Optional."
+          }
+        },
+        "reconfigure": {
+          "title": "Change the planting",
+          "data": {
+            "space": "Space",
+            "variety": "Variety",
+            "quantity": "Number of plants"
+          }
+        }
+      },
+      "abort": {
+        "no_spaces": "Add a space first (a bed, a greenhouse…).",
+        "not_loaded": "The garden is not loaded. Enable it, then try again.",
+        "reconfigure_successful": "The planting has been updated."
+      }
+    }
+  },
+  "selector": {
+    "space_type": {
+      "options": {
+        "bed": "Open ground",
+        "raised_bed": "Raised bed",
+        "greenhouse": "Greenhouse or tunnel",
+        "container": "Pots and containers"
+      }
+    }
+  },
+  "entity": {
+    "calendar": {
+      "calendar": { "name": "Calendar" }
+    },
+    "select": {
+      "stage": {
+        "name": "Stage",
+        "state": {
+          "planned": "Planned",
+          "sown": "Sown",
+          "transplanted": "Planted out",
+          "growing": "Growing",
+          "harvesting": "Harvesting",
+          "finished": "Finished"
+        }
+      }
+    },
+    "sensor": {
+      "harvest": { "name": "Expected harvest" },
+      "next_task": { "name": "Next task" },
+      "next_task_due": { "name": "Next task due" },
+      "plantings": { "name": "Plantings" },
+      "sow_now": { "name": "To sow or plant now" }
+    },
+    "todo": {
+      "tasks": { "name": "Tasks" }
+    }
   }
 }

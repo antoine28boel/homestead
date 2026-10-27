@@ -1,0 +1,15 @@
+id: sweet_corn
+names: {en: Sweet corn, fr: Maïs doux, nl: Suikermaïs, de: Zuckermais}
+family: poaceae
+frost: tender
+sow_indoors:
+  - {start: -4, end: -2}
+sow_direct:
+  - {start: 1, end: 4}
+transplant:
+  - {start: 1, end: 3}
+germination_days: [7, 12]
+harvest: {after: sowing, days: [80, 100], weeks: 3}
+spacing_cm: {plant: 30, row: 60}
+tasks:
+  - {id: earth_up, after: sowing, days: 40, label: {en: Earth up, fr: Butter}}

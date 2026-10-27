@@ -1,0 +1,11 @@
+id: potato
+names: {en: Potato, fr: Pomme de terre, nl: Aardappel, de: Kartoffel}
+family: solanaceae
+frost: half_hardy
+transplant:
+  - {start: -4, end: 1}
+harvest: {after: transplant, days: [90, 120], weeks: 6}
+spacing_cm: {plant: 35, row: 70}
+tasks:
+  - {id: earth_up, after: transplant, days: 21, label: {en: Earth up, fr: Butter}}
+  - {id: earth_up_again, after: transplant, days: 42, label: {en: Earth up again, fr: Butter à nouveau}}
