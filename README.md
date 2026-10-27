@@ -2,7 +2,7 @@
 
 Your whole homestead in Home Assistant: vegetable garden, greenhouse, orchard and chicken coop. Every planting, season after season, with photos.
 
-> **Status: early development.** Version 0.2 is a stand-alone integration with a working crop calendar. The project is now moving to an **app + companion integration** architecture (see below). Not ready for everyday use yet.
+> **Status: early development.** Version 0.3 is the first version of the **app + companion integration**: spaces, seasons, crops, stages, tasks, calendar, journal and harvests. Not ready for everyday use yet.
 
 ## Goals
 
@@ -23,22 +23,24 @@ Your whole homestead in Home Assistant: vegetable garden, greenhouse, orchard an
 | **Homestead app** (container, sidebar page through ingress) | User interface, SQLite database with every season, photos, image processing, crop calendar and water balance |
 | **Companion integration** (HACS) | Native entities (to-do list, calendar, stages, sensors), actions, dashboard cards, blueprints |
 
-On Home Assistant OS, the app installs from the app store and the integration from HACS. On Container or Core installs, the same Docker image runs next to Home Assistant.
+On Home Assistant OS, the app installs from the app store and the integration from HACS; the app announces itself, so the integration needs no address or token. On Container or Core installs, the same Docker image runs next to Home Assistant:
+
+```bash
+docker run -d --name homestead -p 8099:8099 -v homestead:/data -e TZ=Europe/Brussels -e HOMESTEAD_LANGUAGE=fr ghcr.io/antoine28boel/homestead:0.3.0
+```
+
+The API token for the integration is printed in the container log at startup. Set `HOMESTEAD_REQUIRE_TOKEN=1` to also protect the web interface; open it once with `/login?token=…`.
 
 The detailed design (in French) is in [docs/CONCEPTION.fr.md](docs/CONCEPTION.fr.md). The crop catalogue format is described in [docs/catalog.md](docs/catalog.md).
 
 ## Development
 
-The current integration (0.2) is tested with:
-
-```bash
-python3.14 -m venv .venv
-. .venv/bin/activate
-pip install -r requirements_test.txt
-pytest
-```
-
-Home Assistant does not run on Windows: use Linux, macOS, WSL or a container.
+| Folder | What | Tests |
+|---|---|---|
+| `homestead/server` | Python server (FastAPI, SQLAlchemy, Alembic) | `pip install "./homestead/server[test]"`, then `pytest` in that folder |
+| `homestead/frontend` | Web interface (Vue 3, Vite) | `npm ci && npm run build`; `npm run dev` proxies `/api` to a server on port 8099 |
+| `custom_components/homestead` | Companion integration | `pip install -r requirements_test.txt`, then `pytest` at the root (Python 3.14; Home Assistant does not run on Windows) |
+| `homestead/` | App: `config.yaml`, `Dockerfile` | `docker build homestead` |
 
 ## License
 

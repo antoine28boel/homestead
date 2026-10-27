@@ -88,21 +88,21 @@ Sur le modèle de Frigate ou de Music Assistant : une **application** qui fait l
 ```
 homestead/
 ├── repository.yaml              ← dépôt d'applications HA
-├── homestead/                   ← application : config.yaml, Dockerfile, traductions
-├── server/                      ← serveur Python (FastAPI)
-│   ├── homestead_server/
-│   │   ├── catalog/  (espèces en YAML, repris de la phase 1)
-│   │   ├── planner.py (repris de la phase 1)
-│   │   ├── db/ (modèles, migrations)
-│   │   ├── api/  vision/  water/  ha/
-│   └── tests/
-├── frontend/                    ← interface web (Vue, construite en fichiers statiques)
+├── homestead/                   ← application : config.yaml, Dockerfile, DOCS.md
+│   ├── server/                  ← serveur Python (FastAPI)
+│   │   ├── homestead_server/
+│   │   │   ├── catalog/  catalog.py  planner.py  texts.py  (repris de la phase 1)
+│   │   │   ├── orm.py  db.py  migrations/   (tables, Alembic)
+│   │   │   ├── garden.py  api.py  events.py  ha.py
+│   │   │   └── (plus tard : vision/  water/)
+│   │   └── tests/
+│   └── frontend/                ← interface web (Vue, construite en fichiers statiques)
 ├── custom_components/homestead/ ← intégration compagnon (HACS)
 ├── hacs.json
 └── docs/
 ```
 
-L'application et l'intégration partagent un numéro de version, publié en même temps. On séparera les dépôts plus tard si la communauté le demande.
+Le serveur et l'interface sont dans le dossier de l'application parce que le Supervisor construit une application locale avec ce seul dossier comme contexte Docker. L'application et l'intégration partagent un numéro de version, publié en même temps. On séparera les dépôts plus tard si la communauté le demande.
 
 ### Choix techniques
 
@@ -214,7 +214,7 @@ Au moment de placer une culture, l'interface signale :
 | Phase | Contenu | Visé pour |
 |---|---|---|
 | ~~0–1~~ | ~~Intégration seule : dates de gel, espaces, cultures, tâches, calendrier (v0.2)~~ | Faites le 27/10/2026 ; le moteur est repris dans l'application |
-| **A. Socle** | Application (serveur, base, interface derrière l'ingress) ; espaces, saisons, cultures, stades, journal, récoltes ; saisie rapide sur smartphone ; intégration compagnon (découverte, tâches, calendrier, stades, capteurs) ; images Docker et dépôt d'applications | Janvier 2027 |
+| **A. Socle** | Application (serveur, base, interface derrière l'ingress) ; espaces, saisons, cultures, stades, journal, récoltes ; saisie rapide sur smartphone ; intégration compagnon (découverte, tâches, calendrier, stades, capteurs) ; images Docker et dépôt d'applications | Code écrit et testé le 27/10/2026 (v0.3.0) ; reste l'essai dans HA OS, qui demande le dépôt public |
 | **B. Planification** | Plan dessiné, rotation, associations, semis échelonnés, grainothèque, conseils par culture | Avant les semis de février |
 | **C. Eau et climat** | Bilan hydrique, degrés-jours, sondes, gel, serre, cuve, vannes et blueprints | Mars–avril 2027 |
 | **D. Photos** | Album, timelapse, surface verte, identification, diagnostic par IA, maladies ; maturité en dernier | Printemps 2027 |
@@ -232,5 +232,14 @@ Avant chaque publication : tests automatisés, puis essai sur une installation H
 2. **Caméras** (phase D) : une caméra est-elle prévue pour la serre ou le potager ?
 3. **IA de vision** (phase D) : quel service, avec quelle clé ? Ce sera une option, désactivée par défaut.
 4. **Dépôt public** : HACS et le magasin d'applications de HA exigent un dépôt public. À rendre public au plus tard pour le premier essai chez nous.
+
+### Phase A, état au 27/10/2026
+
+- **Serveur** : FastAPI + SQLite (migrations Alembic), API REST sous `/api`, avis de changement par WebSocket `/api/ws` (et un avis à minuit, car les tâches dépendent de la date). 56 tests.
+- **Accès** : derrière l'ingress, le Supervisor authentifie l'utilisateur ; tout autre appel (l'intégration) doit porter le jeton d'API, créé au premier démarrage dans `/data/api_token`. Un serveur autonome est ouvert sur le réseau local sauf `HOMESTEAD_REQUIRE_TOKEN=1`, mais un jeton fourni doit toujours être le bon.
+- **Découverte** : au démarrage, l'application s'annonce au Supervisor (`/discovery`, service `homestead`) avec son nom d'hôte, son port et le jeton ; HA propose alors d'ajouter l'intégration sans rien saisir.
+- **Interface** : Aujourd'hui (tâches, à lancer maintenant), Cultures par saison et par espace, fiche culture (stades, prévu, tâches, récoltes, journal, saisons précédentes), Saisie rapide, Espaces, Réglages. Français et anglais, thème repris de HA dans l'ingress.
+- **Intégration 0.3.0** : configuration par découverte ou par adresse + jeton, réauthentification ; appareils jardin → espaces → cultures en cours (une culture terminée disparaît) ; liste de tâches, calendrier, stade, capteurs (prochaine tâche, échéance, récolte prévue, récolté en kg, cultures et « à lancer » par espace) ; actions `homestead.log_harvest` et `homestead.log_journal`. 18 tests, hassfest valide.
+- **Essai** : image construite et lancée sur le serveur Debian (port 8099 lié à 127.0.0.1), interface vérifiée sur mobile, client de l'intégration vérifié contre le vrai serveur.
 
 *Décisions déjà prises : nom Homestead (27/10) ; Plant-it supprimé (27/10) ; jardin = un carré surélevé, une serre avec 2 bacs, un potager d'environ 8 × 4 m (27/10) ; périmètre, architecture et ordre des phases (27/10).*

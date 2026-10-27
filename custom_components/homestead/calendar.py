@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
+from typing import Any
 
 from homeassistant.components.calendar import CalendarEntity, CalendarEvent
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.util import dt as dt_util
 
-from . import HomesteadConfigEntry
+from .api import HomesteadError
+from .const import DOMAIN
+from .coordinator import HomesteadConfigEntry, HomesteadCoordinator
 from .entity import HomesteadEntity, garden_device
-from .garden import Garden
 
 PARALLEL_UPDATES = 0
 
@@ -25,52 +27,53 @@ async def async_setup_entry(
     async_add_entities([GardenCalendar(entry.runtime_data)])
 
 
+def _event(event: dict[str, Any]) -> CalendarEvent:
+    return CalendarEvent(
+        start=date.fromisoformat(event["start"]),
+        end=date.fromisoformat(event["end"]),
+        summary=event["summary"],
+        location=event["location"],
+        uid=event["uid"],
+    )
+
+
 class GardenCalendar(HomesteadEntity, CalendarEntity):
     """All-day events, one per period of each planting."""
 
-    def __init__(self, garden: Garden) -> None:
+    def __init__(self, coordinator: HomesteadCoordinator) -> None:
         """Attach to the garden device."""
         super().__init__(
-            garden, "calendar", garden.entry.entry_id, garden_device(garden)
+            coordinator,
+            "calendar",
+            coordinator.data["instance_id"],
+            garden_device(coordinator),
         )
-
-    def _events(self) -> list[CalendarEvent]:
-        garden = self.garden
-        events = []
-        for planting_id, planting in garden.plantings.items():
-            plan = garden.schedule(planting_id)
-            name = garden.planting_name(planting)
-            for kind, period in (
-                ("sow", plan.sow),
-                ("transplant", plan.transplant),
-                ("harvest", plan.harvest),
-            ):
-                if period is None:
-                    continue
-                events.append(
-                    CalendarEvent(
-                        start=period[0],
-                        end=period[1] + timedelta(days=1),
-                        summary=garden.texts(f"event_{kind}", name=name),
-                        location=garden.space_name(planting),
-                        uid=f"{planting_id}.{kind}",
-                    )
-                )
-        return sorted(events, key=lambda event: (event.start, event.summary))
 
     @property
     def event(self) -> CalendarEvent | None:
         """The current or next event."""
-        today = self.garden.today()
-        return next((event for event in self._events() if event.end > today), None)
+        today = self.coordinator.data["today"]
+        return next(
+            (
+                _event(event)
+                for event in self.coordinator.data["events"]
+                if event["end"] > today
+            ),
+            None,
+        )
 
     async def async_get_events(
         self, hass: HomeAssistant, start_date: datetime, end_date: datetime
     ) -> list[CalendarEvent]:
         """Events overlapping the requested range."""
-        return [
-            event
-            for event in self._events()
-            if dt_util.start_of_local_day(event.start) < end_date
-            and dt_util.start_of_local_day(event.end) > start_date
-        ]
+        try:
+            events = await self.coordinator.client.calendar(
+                start_date.date(), end_date.date() + timedelta(days=1)
+            )
+        except HomesteadError as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="server_error",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        return [_event(event) for event in events]

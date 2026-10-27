@@ -1,135 +1,40 @@
 {
   "config": {
+    "flow_title": "{name}",
     "step": {
       "user": {
-        "title": "Nouveau jardin",
-        "description": "Les calendriers de culture sont calculés à partir des dates moyennes de gel de votre jardin. Seuls le jour et le mois comptent ; l'année est ignorée.",
+        "title": "Connexion à Homestead",
+        "description": "Homestead tourne normalement comme application Home Assistant et est trouvé automatiquement. Pour un serveur installé ailleurs, saisissez son adresse et le jeton d'API affiché dans son journal au démarrage.",
         "data": {
-          "name": "Nom",
-          "last_frost": "Dernières gelées de printemps",
-          "first_frost": "Premières gelées d'automne"
+          "url": "Adresse",
+          "token": "Jeton d'API"
         },
         "data_description": {
-          "name": "Par exemple : Jardin, Potager, Maison de campagne.",
-          "last_frost": "Date moyenne des dernières gelées. Le service météo de votre pays ou un cercle horticole la publie généralement.",
-          "first_frost": "Date moyenne des premières gelées après l'été."
+          "url": "Par exemple http://192.168.1.10:8099",
+          "token": "Il se trouve aussi dans le fichier api_token du dossier de données du serveur."
+        }
+      },
+      "hassio_confirm": {
+        "title": "Application Homestead trouvée",
+        "description": "Ajouter le jardin {name} à Home Assistant ? Ses tâches, son calendrier et ses cultures apparaîtront comme entités."
+      },
+      "reauth_confirm": {
+        "title": "Nouveau jeton d'API",
+        "description": "Le serveur Homestead à l'adresse {url} a refusé le jeton. Saisissez le jeton actuel.",
+        "data": {
+          "token": "Jeton d'API"
         }
       }
     },
     "error": {
-      "same_frost_dates": "Les dates des dernières et des premières gelées doivent être différentes."
+      "cannot_connect": "Impossible de joindre le serveur Homestead.",
+      "invalid_auth": "Le serveur a refusé ce jeton."
     },
     "abort": {
-      "already_configured": "Un jardin porte déjà ce nom."
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "Dates de gel",
-        "description": "Seuls le jour et le mois comptent ; l'année est ignorée.",
-        "data": {
-          "last_frost": "Dernières gelées de printemps",
-          "first_frost": "Premières gelées d'automne"
-        }
-      }
-    },
-    "error": {
-      "same_frost_dates": "Les dates des dernières et des premières gelées doivent être différentes."
-    }
-  },
-  "config_subentries": {
-    "space": {
-      "entry_type": "Espace",
-      "initiate_flow": {
-        "user": "Ajouter un espace"
-      },
-      "step": {
-        "user": {
-          "title": "Nouvel espace",
-          "description": "Une planche, un carré surélevé, une serre ou un ensemble de pots.",
-          "data": {
-            "name": "Nom",
-            "space_type": "Type",
-            "frost_shift": "Semaines gagnées sur le gel",
-            "area": "Surface (m²)"
-          },
-          "data_description": {
-            "frost_shift": "Combien de semaines plus tôt au printemps, et plus tard à l'automne, on peut cultiver ici par rapport à la pleine terre. Laisser vide pour la valeur habituelle du type : 4 pour une serre non chauffée, 1 pour un carré surélevé, 0 sinon.",
-            "area": "Facultatif. Servira plus tard à convertir les besoins d'arrosage en litres."
-          }
-        },
-        "reconfigure": {
-          "title": "Modifier l'espace",
-          "data": {
-            "name": "Nom",
-            "space_type": "Type",
-            "frost_shift": "Semaines gagnées sur le gel",
-            "area": "Surface (m²)"
-          },
-          "data_description": {
-            "frost_shift": "Laisser vide pour la valeur habituelle du type : 4 pour une serre non chauffée, 1 pour un carré surélevé, 0 sinon."
-          }
-        }
-      },
-      "error": {
-        "name_taken": "Un autre espace porte déjà ce nom."
-      },
-      "abort": {
-        "reconfigure_successful": "L'espace a été modifié."
-      }
-    },
-    "planting": {
-      "entry_type": "Culture",
-      "initiate_flow": {
-        "user": "Ajouter une culture"
-      },
-      "step": {
-        "user": {
-          "title": "Nouvelle culture",
-          "description": "Choisissez où elle poussera et ce que c'est.",
-          "data": {
-            "space": "Espace",
-            "species": "Culture"
-          }
-        },
-        "details": {
-          "title": "{species} – {space}",
-          "description": "Choisissez comment la démarrer. Les dates tiennent compte de vos dates de gel et de l'espace.",
-          "data": {
-            "start": "Démarrage",
-            "variety": "Variété",
-            "quantity": "Nombre de plants"
-          },
-          "data_description": {
-            "variety": "Facultatif, par exemple Cœur de bœuf.",
-            "quantity": "Facultatif."
-          }
-        },
-        "reconfigure": {
-          "title": "Modifier la culture",
-          "data": {
-            "space": "Espace",
-            "variety": "Variété",
-            "quantity": "Nombre de plants"
-          }
-        }
-      },
-      "abort": {
-        "no_spaces": "Ajoutez d'abord un espace (une planche, une serre…).",
-        "not_loaded": "Le jardin n'est pas chargé. Activez-le, puis réessayez.",
-        "reconfigure_successful": "La culture a été modifiée."
-      }
-    }
-  },
-  "selector": {
-    "space_type": {
-      "options": {
-        "bed": "Pleine terre",
-        "raised_bed": "Carré surélevé",
-        "greenhouse": "Serre ou tunnel",
-        "container": "Pots et bacs"
-      }
+      "already_configured": "Ce jardin est déjà configuré. Son adresse et son jeton ont été mis à jour.",
+      "cannot_connect": "Impossible de joindre l'application Homestead.",
+      "reauth_successful": "Le jeton a été mis à jour.",
+      "wrong_server": "Ce jeton appartient à un autre serveur Homestead."
     }
   },
   "entity": {
@@ -140,24 +45,111 @@
       "stage": {
         "name": "Stade",
         "state": {
-          "planned": "Prévue",
-          "sown": "Semée",
-          "transplanted": "Mise en place",
+          "planned": "Prévu",
+          "sown": "Semé",
+          "transplanted": "Mis en place",
           "growing": "En croissance",
           "harvesting": "En récolte",
-          "finished": "Terminée"
+          "finished": "Terminé"
         }
       }
     },
     "sensor": {
       "harvest": { "name": "Récolte prévue" },
+      "harvested": { "name": "Récolté" },
       "next_task": { "name": "Prochaine tâche" },
       "next_task_due": { "name": "Échéance de la prochaine tâche" },
       "plantings": { "name": "Cultures" },
-      "sow_now": { "name": "À semer ou planter maintenant" }
+      "sow_now": { "name": "À lancer maintenant" }
     },
     "todo": {
       "tasks": { "name": "Tâches" }
+    }
+  },
+  "exceptions": {
+    "server_error": {
+      "message": "Le serveur Homestead a échoué : {error}"
+    },
+    "unknown_device": {
+      "message": "Cet appareil n'est ni une culture en cours ni un espace d'un jardin Homestead chargé."
+    },
+    "harvest_needs_planting": {
+      "message": "Une récolte s'enregistre sur une culture, pas sur un espace."
+    }
+  },
+  "selector": {
+    "harvest_unit": {
+      "options": {
+        "kg": "Kilogrammes",
+        "pieces": "Pièces"
+      }
+    },
+    "journal_kind": {
+      "options": {
+        "watering": "Arrosage",
+        "fertilizing": "Fertilisation",
+        "treatment": "Traitement",
+        "observation": "Observation",
+        "other": "Autre"
+      }
+    }
+  },
+  "services": {
+    "log_harvest": {
+      "name": "Enregistrer une récolte",
+      "description": "Ajoute une récolte à une culture. La première récolte la fait passer au stade « en récolte ».",
+      "fields": {
+        "device_id": {
+          "name": "Culture",
+          "description": "L'appareil de la culture."
+        },
+        "quantity": {
+          "name": "Quantité",
+          "description": "Poids ou nombre récolté."
+        },
+        "unit": {
+          "name": "Unité",
+          "description": "Kilogrammes ou pièces."
+        },
+        "day": {
+          "name": "Jour",
+          "description": "Aujourd'hui par défaut."
+        },
+        "note": {
+          "name": "Note",
+          "description": "Facultatif."
+        }
+      }
+    },
+    "log_journal": {
+      "name": "Écrire dans le journal",
+      "description": "Note un arrosage, une fertilisation, un traitement ou une observation, pour une culture ou tout un espace.",
+      "fields": {
+        "device_id": {
+          "name": "Culture ou espace",
+          "description": "L'appareil d'une culture ou d'un espace."
+        },
+        "kind": {
+          "name": "Type",
+          "description": "Ce qui a été fait ou observé."
+        },
+        "amount": {
+          "name": "Quantité",
+          "description": "Facultatif, par exemple des litres d'eau."
+        },
+        "unit": {
+          "name": "Unité",
+          "description": "Unité de la quantité, par exemple L."
+        },
+        "day": {
+          "name": "Jour",
+          "description": "Aujourd'hui par défaut."
+        },
+        "note": {
+          "name": "Note",
+          "description": "Facultatif."
+        }
+      }
     }
   }
 }

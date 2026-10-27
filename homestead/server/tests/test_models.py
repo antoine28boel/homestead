@@ -6,7 +6,7 @@ from datetime import date
 
 import pytest
 
-from custom_components.homestead.models import ClimateProfile, MonthDay
+from homestead_server.models import ClimateProfile, MonthDay
 
 
 @pytest.mark.parametrize(

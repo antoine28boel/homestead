@@ -1,0 +1,66 @@
+log_harvest:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: homestead
+    quantity:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100000
+          step: 0.01
+          mode: box
+    unit:
+      default: kg
+      selector:
+        select:
+          options:
+            - kg
+            - pieces
+          translation_key: harvest_unit
+    day:
+      selector:
+        date:
+    note:
+      selector:
+        text:
+          multiline: true
+
+log_journal:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: homestead
+    kind:
+      default: observation
+      selector:
+        select:
+          options:
+            - watering
+            - fertilizing
+            - treatment
+            - observation
+            - other
+          translation_key: journal_kind
+    amount:
+      selector:
+        number:
+          min: 0
+          max: 100000
+          step: 0.1
+          mode: box
+    unit:
+      selector:
+        text:
+    day:
+      selector:
+        date:
+    note:
+      selector:
+        text:
+          multiline: true

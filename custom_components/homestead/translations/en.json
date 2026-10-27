@@ -1,135 +1,40 @@
 {
   "config": {
+    "flow_title": "{name}",
     "step": {
       "user": {
-        "title": "New garden",
-        "description": "Crop calendars are computed from the average frost dates of your garden. Only the day and month matter, the year is ignored.",
+        "title": "Connect to Homestead",
+        "description": "Homestead normally runs as a Home Assistant app and is found automatically. For a server running elsewhere, enter its address and the API token printed in its log at startup.",
         "data": {
-          "name": "Name",
-          "last_frost": "Last frost of spring",
-          "first_frost": "First frost of autumn"
+          "url": "Address",
+          "token": "API token"
         },
         "data_description": {
-          "name": "For example: Garden, Allotment, Country house.",
-          "last_frost": "Average date of the last frost. Your local weather service or gardening club usually publishes it.",
-          "first_frost": "Average date of the first frost after summer."
+          "url": "For example http://192.168.1.10:8099",
+          "token": "Also stored in the file api_token of the server's data folder."
+        }
+      },
+      "hassio_confirm": {
+        "title": "Homestead app found",
+        "description": "Add the garden {name} to Home Assistant? Its tasks, calendar and plantings will appear as entities."
+      },
+      "reauth_confirm": {
+        "title": "New API token",
+        "description": "The Homestead server at {url} refused the token. Enter the current one.",
+        "data": {
+          "token": "API token"
         }
       }
     },
     "error": {
-      "same_frost_dates": "The last and first frost dates must be different."
+      "cannot_connect": "Cannot reach the Homestead server.",
+      "invalid_auth": "The server refused this token."
     },
     "abort": {
-      "already_configured": "A garden with this name already exists."
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "Frost dates",
-        "description": "Only the day and month matter, the year is ignored.",
-        "data": {
-          "last_frost": "Last frost of spring",
-          "first_frost": "First frost of autumn"
-        }
-      }
-    },
-    "error": {
-      "same_frost_dates": "The last and first frost dates must be different."
-    }
-  },
-  "config_subentries": {
-    "space": {
-      "entry_type": "Space",
-      "initiate_flow": {
-        "user": "Add a space"
-      },
-      "step": {
-        "user": {
-          "title": "New space",
-          "description": "A bed, a raised bed, a greenhouse or a group of pots.",
-          "data": {
-            "name": "Name",
-            "space_type": "Type",
-            "frost_shift": "Weeks gained on frost",
-            "area": "Area (m²)"
-          },
-          "data_description": {
-            "frost_shift": "How many weeks earlier in spring, and later in autumn, you can grow here than in open ground. Leave empty for the usual value of the type: 4 for an unheated greenhouse, 1 for a raised bed, 0 otherwise.",
-            "area": "Optional. Used later to turn watering needs into litres."
-          }
-        },
-        "reconfigure": {
-          "title": "Change the space",
-          "data": {
-            "name": "Name",
-            "space_type": "Type",
-            "frost_shift": "Weeks gained on frost",
-            "area": "Area (m²)"
-          },
-          "data_description": {
-            "frost_shift": "Leave empty for the usual value of the type: 4 for an unheated greenhouse, 1 for a raised bed, 0 otherwise."
-          }
-        }
-      },
-      "error": {
-        "name_taken": "Another space already has this name."
-      },
-      "abort": {
-        "reconfigure_successful": "The space has been updated."
-      }
-    },
-    "planting": {
-      "entry_type": "Planting",
-      "initiate_flow": {
-        "user": "Add a planting"
-      },
-      "step": {
-        "user": {
-          "title": "New planting",
-          "description": "Choose where it will grow and what it is.",
-          "data": {
-            "space": "Space",
-            "species": "Crop"
-          }
-        },
-        "details": {
-          "title": "{species} in {space}",
-          "description": "Choose how to start it. The dates take your frost dates and the space into account.",
-          "data": {
-            "start": "Start",
-            "variety": "Variety",
-            "quantity": "Number of plants"
-          },
-          "data_description": {
-            "variety": "Optional, for example Moneymaker.",
-            "quantity": "Optional."
-          }
-        },
-        "reconfigure": {
-          "title": "Change the planting",
-          "data": {
-            "space": "Space",
-            "variety": "Variety",
-            "quantity": "Number of plants"
-          }
-        }
-      },
-      "abort": {
-        "no_spaces": "Add a space first (a bed, a greenhouse…).",
-        "not_loaded": "The garden is not loaded. Enable it, then try again.",
-        "reconfigure_successful": "The planting has been updated."
-      }
-    }
-  },
-  "selector": {
-    "space_type": {
-      "options": {
-        "bed": "Open ground",
-        "raised_bed": "Raised bed",
-        "greenhouse": "Greenhouse or tunnel",
-        "container": "Pots and containers"
-      }
+      "already_configured": "This garden is already set up. Its address and token have been updated.",
+      "cannot_connect": "Cannot reach the Homestead app.",
+      "reauth_successful": "The token has been updated.",
+      "wrong_server": "This token belongs to another Homestead server."
     }
   },
   "entity": {
@@ -151,13 +56,100 @@
     },
     "sensor": {
       "harvest": { "name": "Expected harvest" },
+      "harvested": { "name": "Harvested" },
       "next_task": { "name": "Next task" },
       "next_task_due": { "name": "Next task due" },
       "plantings": { "name": "Plantings" },
-      "sow_now": { "name": "To sow or plant now" }
+      "sow_now": { "name": "To start now" }
     },
     "todo": {
       "tasks": { "name": "Tasks" }
+    }
+  },
+  "exceptions": {
+    "server_error": {
+      "message": "The Homestead server failed: {error}"
+    },
+    "unknown_device": {
+      "message": "This device is not an active planting or a space of a loaded Homestead garden."
+    },
+    "harvest_needs_planting": {
+      "message": "A harvest is logged on a planting, not on a space."
+    }
+  },
+  "selector": {
+    "harvest_unit": {
+      "options": {
+        "kg": "Kilograms",
+        "pieces": "Pieces"
+      }
+    },
+    "journal_kind": {
+      "options": {
+        "watering": "Watering",
+        "fertilizing": "Feeding",
+        "treatment": "Treatment",
+        "observation": "Observation",
+        "other": "Other"
+      }
+    }
+  },
+  "services": {
+    "log_harvest": {
+      "name": "Log a harvest",
+      "description": "Adds a harvest to a planting. The first harvest moves it to the harvesting stage.",
+      "fields": {
+        "device_id": {
+          "name": "Planting",
+          "description": "The planting's device."
+        },
+        "quantity": {
+          "name": "Quantity",
+          "description": "Weight or number harvested."
+        },
+        "unit": {
+          "name": "Unit",
+          "description": "Kilograms or pieces."
+        },
+        "day": {
+          "name": "Day",
+          "description": "Defaults to today."
+        },
+        "note": {
+          "name": "Note",
+          "description": "Optional."
+        }
+      }
+    },
+    "log_journal": {
+      "name": "Write in the journal",
+      "description": "Records a watering, a feed, a treatment or an observation for a planting or a whole space.",
+      "fields": {
+        "device_id": {
+          "name": "Planting or space",
+          "description": "The device of a planting or of a space."
+        },
+        "kind": {
+          "name": "Kind",
+          "description": "What was done or seen."
+        },
+        "amount": {
+          "name": "Amount",
+          "description": "Optional, such as litres of water."
+        },
+        "unit": {
+          "name": "Unit",
+          "description": "Unit of the amount, such as L."
+        },
+        "day": {
+          "name": "Day",
+          "description": "Defaults to today."
+        },
+        "note": {
+          "name": "Note",
+          "description": "Optional."
+        }
+      }
     }
   }
 }

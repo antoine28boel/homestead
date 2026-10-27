@@ -6,7 +6,32 @@ on:
   workflow_dispatch:
 
 jobs:
-  tests:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: pip install ruff==0.17.3
+      - run: ruff check .
+      - run: ruff format --check .
+
+  server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: homestead/server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - run: pip install ".[test]"
+      - run: pytest
+
+  integration:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,6 +40,4 @@ jobs:
           python-version: "3.14"
           cache: pip
       - run: pip install -r requirements_test.txt
-      - run: ruff check .
-      - run: ruff format --check .
       - run: pytest

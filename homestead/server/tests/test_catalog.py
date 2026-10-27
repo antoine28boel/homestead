@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from custom_components.homestead.catalog import (
+from homestead_server.catalog import (
     CatalogError,
     load_catalog,
     parse_species,

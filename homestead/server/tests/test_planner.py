@@ -6,9 +6,9 @@ from datetime import date
 
 import pytest
 
-from custom_components.homestead.catalog import Species, load_catalog
-from custom_components.homestead.models import ClimateProfile, MonthDay
-from custom_components.homestead.planner import (
+from homestead_server.catalog import Species, load_catalog
+from homestead_server.models import ClimateProfile, MonthDay
+from homestead_server.planner import (
     Planting,
     PlantingState,
     Space,

@@ -14,5 +14,5 @@ ignore = ["RUF001"]
 
 [tool.ruff.lint.isort]
 force-sort-within-sections = true
-known-first-party = ["homeassistant"]
+known-first-party = ["homeassistant", "homestead_server"]
 combine-as-imports = true

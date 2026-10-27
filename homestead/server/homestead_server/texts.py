@@ -1,8 +1,7 @@
-"""Texts built at runtime (task summaries, calendar events, form choices).
+"""Texts built by the server: task summaries, calendar events, start choices.
 
-Home Assistant translation files cannot hold free-form texts with
-placeholders for to-do items or calendar events, so they live here.
-English is the fallback for missing languages.
+They are shared by the web interface and the Home Assistant to-do list and
+calendar, so they are written once here. English is the fallback.
 """
 
 from __future__ import annotations
@@ -54,7 +53,7 @@ TEXTS: dict[str, dict[str, str]] = {
 
 
 class Texts:
-    """Texts in the language of Home Assistant."""
+    """Texts in the language of the garden."""
 
     def __init__(self, language: str) -> None:
         """Pick the language, falling back to English."""

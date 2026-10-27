@@ -17,7 +17,8 @@
       }
     },
     "sensor": {
-      "harvest": { "default": "mdi:basket" },
+      "harvest": { "default": "mdi:basket-clock" },
+      "harvested": { "default": "mdi:basket" },
       "next_task": { "default": "mdi:shovel" },
       "next_task_due": { "default": "mdi:calendar-alert" },
       "plantings": { "default": "mdi:flower" },
@@ -26,5 +27,9 @@
     "todo": {
       "tasks": { "default": "mdi:clipboard-list" }
     }
+  },
+  "services": {
+    "log_harvest": { "service": "mdi:basket-plus" },
+    "log_journal": { "service": "mdi:notebook-edit" }
   }
 }

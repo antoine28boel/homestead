@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools==84.2.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "homestead-server"
+dynamic = ["version"]
+description = "Garden server of the Homestead app for Home Assistant"
+license = "MIT"
+requires-python = ">=3.13"
+dependencies = [
+    "alembic==1.20.1",
+    "fastapi==0.162.0",
+    "httpx==0.28.1",
+    "pydantic==2.14.1",
+    "pyyaml==6.0.3",
+    "sqlalchemy==2.1.6",
+    "tzdata==2026.5",
+    "uvicorn==0.54.0",
+    "websockets==17.3",
+]
+
+[project.optional-dependencies]
+test = ["pytest==9.1.1"]
+
+[project.scripts]
+homestead-server = "homestead_server.__main__:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "homestead_server.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["homestead_server*"]
+
+[tool.setuptools.package-data]
+homestead_server = ["catalog/*.yaml", "migrations/*.py", "migrations/versions/*.py", "static/**/*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+filterwarnings = ["ignore:Using .httpx. with .starlette.testclient.:UserWarning"]
+
+[tool.ruff]
+extend = "../../pyproject.toml"
+# The server runs on the app's Python, which can be older than Home Assistant's.
+target-version = "py313"
