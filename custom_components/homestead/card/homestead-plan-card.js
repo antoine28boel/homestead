@@ -44,7 +44,8 @@ const STRINGS = {
 };
 
 function strings(hass) {
-  const language = (hass?.locale?.language || hass?.language || "en").split("-")[0];
+  const language = (hass?.locale?.language || hass?.language
+    || document.documentElement.lang || navigator.language || "en").split("-")[0];
   return STRINGS[language] || STRINGS.en;
 }
 
@@ -906,8 +907,11 @@ class HomesteadPlanCard extends HTMLElement {
   }
 }
 
-if (!customElements.get("homestead-plan-card")) {
-  customElements.define("homestead-plan-card", HomesteadPlanCard);
+function register() {
+  // Read the registry again: it may have been replaced since this file ran.
+  const registry = window.customElements;
+  if (registry.get("homestead-plan-card")) return;
+  registry.define("homestead-plan-card", HomesteadPlanCard);
   const t = strings(document.querySelector("home-assistant")?.hass);
   window.customCards = window.customCards || [];
   window.customCards.push({
@@ -917,4 +921,19 @@ if (!customElements.get("homestead-plan-card")) {
     preview: true,
     documentationURL: "https://github.com/antoine28boel/homestead",
   });
+}
+
+// Home Assistant loads this file before its interface, which then puts its
+// own element registry in place: a card defined earlier would be lost. Wait
+// until the interface is defined in the current registry.
+if (window.customElements.get("home-assistant")) {
+  register();
+} else {
+  const started = Date.now();
+  const wait = setInterval(() => {
+    if (window.customElements.get("home-assistant") || Date.now() - started > 60000) {
+      clearInterval(wait);
+      register();
+    }
+  }, 50);
 }
