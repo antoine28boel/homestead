@@ -24,7 +24,7 @@ When the app starts, Home Assistant offers to add the **Homestead** integration 
 - a calendar of sowing, planting-out and harvest periods;
 - a device per space and per crop in progress, with its stage, next task, expected harvest and harvested weight;
 - the actions `homestead.log_harvest` and `homestead.log_journal`, for buttons and automations (for example, log a watering when a valve closes);
-- the **Garden plan** dashboard card (`custom:homestead-plan-card`), for every user of Home Assistant, not only administrators. The plan follows the season and, if you choose a weather entity, the weather (sun, clouds, rain, snow, fog, storm, wind) and the night. Plants grow with their stage and bear fruit at harvest time; planned crops are dashed. Tap a space or a crop to open it.
+- the **Garden plan** dashboard card (`custom:homestead-plan-card`), for every user of Home Assistant, not only administrators. The plan follows the season and, if you choose a weather entity, the weather (sun, clouds, rain, snow, fog, storm, wind) and the night. Plants grow with their stage and bear fruit at harvest time; planned crops are dashed. Tap a space to zoom in on it: its crops are named on the plan and listed below it, with their stage, number of plants, layout and next task. Tap a crop in the list to open it; tap × or outside the space to zoom out.
 
 ```yaml
 type: custom:homestead-plan-card

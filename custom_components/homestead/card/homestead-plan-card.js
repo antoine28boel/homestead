@@ -22,6 +22,18 @@ const STRINGS = {
     title: "Title",
     weather: "Weather",
     entry: "Garden",
+    close: "Close",
+    open_space: "Open the space",
+    no_crops: "No crop in this space.",
+    crops: (count) => (count === 1 ? "1 crop" : `${count} crops`),
+    plants: (count) => (count === 1 ? "1 plant" : `${count} plants`),
+    to_do: "to do",
+    space_types: { bed: "Bed", raised_bed: "Raised bed", greenhouse: "Greenhouse", container: "Container" },
+    stages: {
+      planned: "Planned", sown: "Sown", sown_indoors: "Sown indoors", transplanted: "Planted out",
+      growing: "Growing", harvesting: "Harvesting", finished: "Finished",
+    },
+    layouts: { grid: "in a grid", rows: "in rows", staggered: "staggered", free: "free layout" },
   },
   fr: {
     name: "Plan du jardin",
@@ -40,13 +52,49 @@ const STRINGS = {
     title: "Titre",
     weather: "Météo",
     entry: "Jardin",
+    close: "Fermer",
+    open_space: "Ouvrir l'espace",
+    no_crops: "Aucune culture dans cet espace.",
+    crops: (count) => (count === 1 ? "1 culture" : `${count} cultures`),
+    plants: (count) => (count === 1 ? "1 plant" : `${count} plants`),
+    to_do: "à faire",
+    space_types: { bed: "Planche", raised_bed: "Carré surélevé", greenhouse: "Serre", container: "Pot" },
+    stages: {
+      planned: "Prévue", sown: "Semée", sown_indoors: "Semée en godets", transplanted: "Repiquée",
+      growing: "En croissance", harvesting: "En récolte", finished: "Terminée",
+    },
+    layouts: { grid: "en grille", rows: "en lignes", staggered: "en quinconce", free: "disposition libre" },
   },
 };
 
 function strings(hass) {
   const language = (hass?.locale?.language || hass?.language
     || document.documentElement.lang || navigator.language || "en").split("-")[0];
-  return STRINGS[language] || STRINGS.en;
+  return { ...(STRINGS[language] || STRINGS.en), language };
+}
+
+// The part of the plan to show around a space: some room around it, with the
+// proportions of the whole plan (so the card keeps its height).
+function focusBox(shape, width, height) {
+  const angle = ((shape.rotation || 0) * Math.PI) / 180;
+  const boxWidth = Math.abs(Math.cos(angle)) * shape.width + Math.abs(Math.sin(angle)) * shape.height;
+  const boxHeight = Math.abs(Math.sin(angle)) * shape.width + Math.abs(Math.cos(angle)) * shape.height;
+  const margin = Math.max(0.4, Math.max(boxWidth, boxHeight) * 0.12);
+  let w = boxWidth + margin * 2;
+  let h = boxHeight + margin * 2;
+  if (w / h < width / height) w = (h * width) / height;
+  else h = (w * height) / width;
+  if (w >= width || h >= height) return [0, 0, width, height];
+  const cx = shape.x + shape.width / 2;
+  const cy = shape.y + shape.height / 2;
+  const x = Math.min(Math.max(cx - w / 2, 0), width - w);
+  const y = Math.min(Math.max(cy - h / 2, 0), height - h);
+  return [x, y, w, h].map(n);
+}
+
+function stageName(t, planting) {
+  if (planting.stage === "sown" && planting.method === "sow_indoors") return t.stages.sown_indoors;
+  return t.stages[planting.stage] || planting.stage;
 }
 
 // Leaves and fruits by botanical family; the app uses the same fruit colours.
@@ -75,6 +123,20 @@ const FRUIT = {
   lamiaceae: "#9575cd",
   poaceae: "#fdd835",
   caprifoliaceae: "#7cb342",
+};
+// One colour per family, as in the app, for the list of crops.
+const FAMILY_COLOR = {
+  solanaceae: "#e53935",
+  cucurbitaceae: "#f9a825",
+  brassicaceae: "#7e57c2",
+  fabaceae: "#43a047",
+  amaryllidaceae: "#9e9d24",
+  apiaceae: "#ff7043",
+  amaranthaceae: "#ad1457",
+  asteraceae: "#7cb342",
+  lamiaceae: "#26a69a",
+  poaceae: "#d4a017",
+  caprifoliaceae: "#2e7d32",
 };
 const FLOWERING = { solanaceae: "#fdd835", cucurbitaceae: "#ffca28", fabaceae: "#ffffff" };
 const GLYPH = {
@@ -465,13 +527,13 @@ function plantRadius(planting) {
 
 function crop(p, planting, ctx, animate) {
   const { x, y, width, height } = planting.region;
-  const entity = ctx.entities[planting.id];
   const family = planting.family;
   const leaf = planting.stage === "finished" ? "#a1887f" : FOLIAGE[family] || "#5f9e3f";
   const style = `--leaf:${leaf};--fruit:${FRUIT[family] || "#ef5350"};--flower:${FLOWERING[family] || "#fff"}`;
-  let out = `<g class="crop" transform="translate(${n(x)} ${n(y)})" style="${style}"${entity ? ` data-entity="${escape(entity)}"` : ""}>` +
+  const picked = ctx.crop === planting.id ? " on" : "";
+  let out = `<g class="crop${picked}" transform="translate(${n(x)} ${n(y)})" style="${style}" data-crop="${escape(planting.id)}">` +
     `<title>${escape(planting.name)}</title>` +
-    `<rect width="${n(width)}" height="${n(height)}" fill="transparent"/>`;
+    `<rect class="area" width="${n(width)}" height="${n(height)}"/>`;
   if (!planting.in_ground) {
     // Planned, or still in the nursery: only the outline and the seed marks.
     out += `<rect x=".03" y=".03" width="${n(Math.max(width - 0.06, 0.01))}" height="${n(Math.max(height - 0.06, 0.01))}" rx=".05" fill="#fff" fill-opacity=".08" stroke="#fff" stroke-opacity=".75" stroke-width=".025" stroke-dasharray=".08 .06"/>`;
@@ -528,14 +590,13 @@ function space(p, shape, plantings, ctx, animated) {
   const w = n(shape.width);
   const h = n(shape.height);
   const round = shape.shape === "round";
-  const entity = ctx.entities[shape.id];
   const soil = SPACE_SOIL[shape.type] || SPACE_SOIL.bed;
   const edge = shape.sheltered ? SPACE_EDGE.raised_bed : SPACE_EDGE[shape.type] || SPACE_EDGE.bed;
   const outline = (attributes) => round
     ? `<ellipse cx="${n(w / 2)}" cy="${n(h / 2)}" rx="${n(w / 2)}" ry="${n(h / 2)}" ${attributes}/>`
     : `<rect width="${w}" height="${h}" rx=".05" ${attributes}/>`;
   const clip = `${p}-clip-${shape.id}`;
-  let out = `<g class="space" transform="${shapeTransform(shape)}"${entity ? ` data-entity="${escape(entity)}"` : ""}>` +
+  let out = `<g class="space${ctx.focus === shape.id ? " on" : ""}" transform="${shapeTransform(shape)}" data-space="${escape(shape.id)}">` +
     `<title>${escape(shape.name)}</title>` +
     `<clipPath id="${clip}">${outline("")}</clipPath>` +
     outline(`fill="#1b3012" opacity=".12" transform="translate(.06 .08)"`) +
@@ -553,7 +614,20 @@ function space(p, shape, plantings, ctx, animated) {
   return `${out}</g>`;
 }
 
+// Names of the crops of the space zoomed on, over everything (greenhouse glass too).
+function cropLabels(shape, plantings, ctx) {
+  let out = "";
+  for (const planting of plantings) {
+    const { x, y, width, height } = planting.region;
+    if (width * ctx.scale < 36) continue;
+    const name = fitLabel(planting.name, width * ctx.scale - 12, 11);
+    out += `<text class="label crop-label" x="${n(x + width / 2)}" y="${n(y + height / 2)}" dy=".35em" font-size="${n(11 / ctx.scale)}" stroke-width="${n(3 / ctx.scale)}">${escape(name)}</text>`;
+  }
+  return out && `<g transform="${shapeTransform(shape)}">${out}</g>`;
+}
+
 function labels(shape, plantings, ctx) {
+  if (ctx.focus === shape.id) return cropLabels(shape, plantings, ctx);
   const fontSize = 12 / ctx.scale;
   const name = fitLabel(shape.name, shape.width * ctx.scale, 12);
   // Above the space, wherever it is turned: at the top of its bounding box.
@@ -662,15 +736,17 @@ function drawPlan(p, plan, ctx) {
   const { out: sky, keyframes } = weather(p, plan, ctx);
   let body = `<rect width="${W}" height="${H}" fill="${GROUND[ctx.season]}"/><rect width="${W}" height="${H}" fill="url(#${p}-grass)"/>`;
   if (ctx.sky.snow) body += `<rect width="${W}" height="${H}" fill="#fff" opacity=".7"/>`;
-  body += items.map((shape) => item(p, shape, ctx)).join("");
+  body += `<g class="decor">${items.map((shape) => item(p, shape, ctx)).join("")}</g>`;
   body += placed.map((shape) => space(p, shape, byspace[shape.id] || [], ctx, animated)).join("");
   body += items
     .filter((shape) => shape.kind === "greenhouse")
-    .map((shape) => `<g transform="${shapeTransform(shape)}">${shape.label ? `<title>${escape(shape.label)}</title>` : ""}${glass(p, shape, false)}</g>`)
+    // Glass over the beds: taps go through to them.
+    .map((shape) => `<g transform="${shapeTransform(shape)}" pointer-events="none">${shape.label ? `<title>${escape(shape.label)}</title>` : ""}${glass(p, shape, false)}</g>`)
     .join("");
   body += sky;
-  body += placed.map((shape) => labels(shape, byspace[shape.id] || [], ctx)).join("");
-  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="${ctx.motion ? "anim" : ""}" style="--sw:${sway.toFixed(1)};--ss:${(5.5 - Math.min(ctx.sky.wind, 50) / 15).toFixed(1)}s" role="img" aria-label="${escape(ctx.garden)}">` +
+  body += `<g class="labels">${placed.map((shape) => labels(shape, byspace[shape.id] || [], ctx)).join("")}</g>`;
+  const classes = [ctx.motion ? "anim" : "", ctx.focus ? "focus" : "", ctx.crop ? "picked" : ""].join(" ").trim();
+  return `<svg viewBox="${ctx.view.join(" ")}" preserveAspectRatio="xMidYMid meet" class="${classes}" style="--sw:${sway.toFixed(1)};--ss:${(5.5 - Math.min(ctx.sky.wind, 50) / 15).toFixed(1)}s" role="img" aria-label="${escape(ctx.garden)}">` +
     `<style>${keyframes}</style>${defs(p, ctx.season)}${body}</svg>`;
 }
 
@@ -685,8 +761,34 @@ ha-card { overflow: hidden; }
 .plan { line-height: 0; }
 .plan svg { width: 100%; height: auto; display: block; max-height: var(--homestead-plan-max-height, 70vh); }
 .message { padding: 16px; color: var(--secondary-text-color); line-height: 1.4; }
-[data-entity] { cursor: pointer; }
-.crop:hover > rect:first-of-type { fill: rgba(255,255,255,.12); }
+[data-entity], [data-space], [data-crop], [data-action] { cursor: pointer; }
+.area { fill: transparent; }
+.crop:hover > .area { fill: rgba(255,255,255,.12); }
+.crop.on > .area { fill: rgba(255,255,255,.2); stroke: #fff; stroke-width: 2px; vector-effect: non-scaling-stroke; }
+.decor, .space, .labels { transition: opacity .4s; }
+.focus .decor, .focus .space:not(.on) { opacity: .45; }
+.focus .labels > .label, .focus .labels > .badge { opacity: .6; }
+.picked .space.on .crop:not(.on) { opacity: .55; }
+.label, .badge { transition: opacity .2s; }
+.moving .label, .moving .badge, .focus.moving .labels .label { opacity: 0; }
+.crop-label { font-weight: 600; }
+.detail { padding: 0 16px 12px; border-top: 1px solid var(--divider-color, rgba(0,0,0,.12)); }
+.detail[hidden] { display: none; }
+.detail-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0 4px; }
+.detail-title { font-size: 1.05em; font-weight: 500; color: var(--primary-text-color); }
+.detail-sub, .empty { font-size: .85em; color: var(--secondary-text-color); }
+.empty { padding: 6px 0 4px; }
+.close { border: none; background: none; color: var(--secondary-text-color); font-size: 24px; line-height: 1; padding: 4px 8px; border-radius: 50%; }
+.rows { list-style: none; margin: 0; padding: 0; }
+.row { display: flex; align-items: center; gap: 12px; padding: 10px 8px; margin: 0 -8px; border-radius: 12px; }
+.row:hover, .row.on { background: var(--secondary-background-color, rgba(0,0,0,.05)); }
+.dot { width: 12px; height: 12px; border-radius: 50%; flex: 0 0 auto; box-shadow: 0 0 0 2px rgba(255,255,255,.6); }
+.row-main { flex: 1; min-width: 0; }
+.row-name { color: var(--primary-text-color); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-sub { font-size: .85em; color: var(--secondary-text-color); }
+.row-task { text-align: right; font-size: .85em; color: var(--secondary-text-color); max-width: 42%; }
+.row-task.due { color: var(--warning-color, #f39c12); font-weight: 500; }
+.more { background: none; border: none; color: var(--primary-color); padding: 8px 0 0; font: inherit; font-size: .9em; }
 .label { text-anchor: middle; fill: #1d2419; stroke: rgba(255,255,255,.85); paint-order: stroke; font-weight: 500; pointer-events: none; font-family: var(--ha-font-family-body, inherit); }
 .badge circle { fill: var(--warning-color, #f39c12); stroke: #fff; }
 .badge text { fill: #fff; text-anchor: middle; dominant-baseline: central; font-weight: 600; pointer-events: none; }
@@ -742,6 +844,10 @@ class HomesteadPlanCard extends HTMLElement {
     this._key = null;
     this._grown = false;
     this._width = 0;
+    // The space zoomed on, and the crop picked in it.
+    this._focus = null;
+    this._crop = null;
+    this._view = null;
   }
 
   setConfig(config) {
@@ -832,16 +938,97 @@ class HomesteadPlanCard extends HTMLElement {
   _ensureDom() {
     if (this.shadowRoot) return;
     this.attachShadow({ mode: "open" });
-    this.shadowRoot.innerHTML = `<style>${STYLE}</style><ha-card><div class="head"><span class="title"></span><span class="sub"></span></div><div class="plan"></div></ha-card>`;
-    this.shadowRoot.querySelector(".plan").addEventListener("click", (event) => {
-      const target = event.composedPath().find((node) => node.dataset?.entity);
-      if (!target) return;
-      this.dispatchEvent(new CustomEvent("hass-more-info", {
-        detail: { entityId: target.dataset.entity },
-        bubbles: true,
-        composed: true,
-      }));
+    this.shadowRoot.innerHTML = `<style>${STYLE}</style><ha-card><div class="head"><span class="title"></span><span class="sub"></span></div><div class="plan"></div><div class="detail" hidden></div></ha-card>`;
+    const plan = this.shadowRoot.querySelector(".plan");
+    this.shadowRoot.querySelector("ha-card").addEventListener("click", (event) => {
+      const path = event.composedPath();
+      const found = (key) => path.find((node) => node.dataset?.[key] !== undefined);
+      if (found("action")) {
+        this._zoom(null);
+        return;
+      }
+      const entity = found("entity");
+      if (entity) {
+        this.dispatchEvent(new CustomEvent("hass-more-info", {
+          detail: { entityId: entity.dataset.entity },
+          bubbles: true,
+          composed: true,
+        }));
+        return;
+      }
+      if (!path.includes(plan)) return;
+      const crop = found("crop");
+      const planting = crop && this._data?.plan?.plantings.find((item) => item.id === crop.dataset.crop);
+      if (planting) {
+        this._zoom(planting.space_id, this._crop === planting.id ? null : planting.id);
+        return;
+      }
+      const space = found("space");
+      if (space) this._zoom(space.dataset.space);
+      else if (this._focus) this._zoom(null);
     });
+  }
+
+  _zoom(space, crop = null) {
+    if (space === this._focus && crop === this._crop) return;
+    this._focus = space;
+    this._crop = crop;
+    this._render();
+  }
+
+  // Glide from one part of the plan to another.
+  _glide(svg, from, to) {
+    cancelAnimationFrame(this._frame);
+    svg.classList.add("moving");
+    svg.setAttribute("viewBox", from.join(" "));
+    const start = performance.now();
+    const step = (now) => {
+      const progress = Math.min((now - start) / 450, 1);
+      const eased = progress < 0.5 ? 2 * progress * progress : 1 - (-2 * progress + 2) ** 2 / 2;
+      svg.setAttribute("viewBox", from.map((value, index) => n(value + (to[index] - value) * eased)).join(" "));
+      if (progress < 1) this._frame = requestAnimationFrame(step);
+      else svg.classList.remove("moving");
+    };
+    this._frame = requestAnimationFrame(step);
+  }
+
+  // The crops of the space zoomed on.
+  _detail(shape, plantings, t, data) {
+    const area = shape.shape === "round" ? (Math.PI * shape.width * shape.height) / 4 : shape.width * shape.height;
+    const sub = [
+      t.space_types[shape.type] || shape.type,
+      `${area.toLocaleString(t.language, { maximumFractionDigits: 1 })} m²`,
+      t.crops(plantings.length),
+    ].join(" · ");
+    const rows = plantings.map((planting) => {
+      const parts = [stageName(t, planting)];
+      if (planting.count) parts.push(t.plants(planting.count));
+      parts.push(t.layouts[planting.layout] || planting.layout);
+      let task = "";
+      if (planting.next_task) {
+        const { summary, due } = planting.next_task;
+        const late = due && due <= data.today;
+        const when = !due ? "" : late ? t.to_do
+          : new Date(`${due}T12:00:00`).toLocaleDateString(t.language, {
+            day: "numeric",
+            month: "short",
+            ...(due.slice(0, 4) !== data.today.slice(0, 4) ? { year: "numeric" } : {}),
+          });
+        task = `<div class="row-task${late ? " due" : ""}">${escape(summary.split(/\s?:\s/)[0])}` +
+          `${when ? `<br><small>${escape(when)}</small>` : ""}</div>`;
+      }
+      const entity = data.entities?.[planting.id];
+      return `<li class="row${this._crop === planting.id ? " on" : ""}"${entity ? ` data-entity="${escape(entity)}"` : ""}>` +
+        `<span class="dot" style="background:${FAMILY_COLOR[planting.family] || "#558b2f"}"></span>` +
+        `<div class="row-main"><div class="row-name">${escape(planting.name)}</div>` +
+        `<div class="row-sub">${escape(parts.join(" · "))}</div></div>${task}</li>`;
+    }).join("");
+    const entity = data.entities?.[shape.id];
+    return `<div class="detail-head"><div><div class="detail-title">${escape(shape.name)}</div>` +
+      `<div class="detail-sub">${escape(sub)}</div></div>` +
+      `<button class="close" data-action="close" aria-label="${escape(t.close)}" title="${escape(t.close)}">×</button></div>` +
+      (rows ? `<ul class="rows">${rows}</ul>` : `<div class="empty">${escape(t.no_crops)}</div>`) +
+      (entity ? `<button class="more" data-entity="${escape(entity)}">${escape(t.open_space)}</button>` : "");
   }
 
   _render() {
@@ -858,7 +1045,7 @@ class HomesteadPlanCard extends HTMLElement {
     const night = this._hass.states["sun.sun"]?.state === "below_horizon" || sky.state === "clear-night";
     const motion = !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     const key = [this._version, this._error, season, JSON.stringify(sky), night, t.name,
-      this._config.title, this._width, motion].join("|");
+      this._config.title, this._width, motion, this._focus, this._crop].join("|");
     if (key === this._key) return;
     this._key = key;
 
@@ -876,6 +1063,8 @@ class HomesteadPlanCard extends HTMLElement {
     root.querySelector(".sub").textContent = sub;
 
     const container = root.querySelector(".plan");
+    const detail = root.querySelector(".detail");
+    detail.hidden = true;
     if (this._error) {
       container.innerHTML = `<div class="message">${escape(t[this._error])}</div>`;
       return;
@@ -888,9 +1077,12 @@ class HomesteadPlanCard extends HTMLElement {
       container.innerHTML = `<div class="message">${escape(t.no_plan)}</div>`;
       return;
     }
+    const focus = plan.spaces.find((shape) => shape.placed && shape.id === this._focus);
+    if (!focus) this._focus = this._crop = null;
+    const view = focus ? focusBox(focus, plan.width, plan.height) : [0, 0, plan.width, plan.height];
     const width = this._width || container.clientWidth || 400;
     // Pixels per metre, as drawn (the plan is at most 70 % of the screen high).
-    const scale = Math.min(width / plan.width, (window.innerHeight * 0.7) / plan.height);
+    const scale = Math.min(width / plan.width, (window.innerHeight * 0.7) / plan.height) * (plan.width / view[2]);
     container.innerHTML = drawPlan(this._prefix, plan, {
       t,
       season,
@@ -898,10 +1090,20 @@ class HomesteadPlanCard extends HTMLElement {
       night,
       motion,
       scale,
+      view,
+      focus: this._focus,
+      crop: this._crop,
       grow: motion && !this._grown,
       garden: this._config.title || data.garden || t.name,
-      entities: data.entities || {},
     });
+    const from = this._view;
+    this._view = view;
+    if (motion && from && from.join() !== view.join()) this._glide(container.querySelector("svg"), from, view);
+    if (focus) {
+      const plantings = plan.plantings.filter((planting) => planting.space_id === focus.id);
+      detail.innerHTML = this._detail(focus, plantings, t, data);
+      detail.hidden = false;
+    }
     // Plants grow in on the first drawings only (the width may still settle).
     this._growing ??= setTimeout(() => { this._grown = true; }, 1500);
   }
