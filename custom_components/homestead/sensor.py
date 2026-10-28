@@ -1,4 +1,4 @@
-"""Sensors of plantings and spaces."""
+"""Sensors of the garden, its spaces and its plantings."""
 
 from __future__ import annotations
 
@@ -15,7 +15,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .coordinator import HomesteadConfigEntry, HomesteadCoordinator
-from .entity import PlantingEntity, SpaceEntity, async_add_for_each
+from .entity import (
+    HomesteadEntity,
+    PlantingEntity,
+    SpaceEntity,
+    async_add_for_each,
+    garden_device,
+)
 
 PARALLEL_UPDATES = 0
 
@@ -25,7 +31,8 @@ async def async_setup_entry(
     entry: HomesteadConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Sensors for every space and every active planting."""
+    """Sensors of the garden, every space and every active planting."""
+    async_add_entities([NextFrostSensor(entry.runtime_data)])
 
     def for_space(coordinator: HomesteadCoordinator, space: dict[str, Any]) -> list:
         return [
@@ -49,6 +56,33 @@ async def async_setup_entry(
 
 def _day(value: str | None) -> date | None:
     return date.fromisoformat(value) if value else None
+
+
+class NextFrostSensor(HomesteadEntity, SensorEntity):
+    """The first frosty night of the coming week, from the forecast."""
+
+    _attr_device_class = SensorDeviceClass.DATE
+
+    def __init__(self, coordinator: HomesteadCoordinator) -> None:
+        """Attach to the garden device."""
+        super().__init__(
+            coordinator,
+            "next_frost",
+            coordinator.data["instance_id"],
+            garden_device(coordinator),
+        )
+
+    @property
+    def native_value(self) -> date | None:
+        """Day of the frost, or nothing when none is forecast."""
+        frost = self.coordinator.data.get("frost")
+        return _day(frost["day"]) if frost else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Forecast minimum, in degrees Celsius."""
+        frost = self.coordinator.data.get("frost")
+        return {"temperature": frost["low"] if frost else None}
 
 
 class SpacePlantingsSensor(SpaceEntity, SensorEntity):

@@ -58,6 +58,7 @@
       "harvest": { "name": "Expected harvest" },
       "harvested": { "name": "Harvested" },
       "next_task": { "name": "Next task" },
+      "next_frost": { "name": "Next frost" },
       "next_task_due": { "name": "Next task due" },
       "plantings": { "name": "Plantings" },
       "sow_now": { "name": "To start now" }

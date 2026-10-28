@@ -57,7 +57,7 @@ async function remove() {
         :to="`/plantings/${task.planting_id}`"
         class="summary"
       >
-        {{ task.summary }}
+        <span v-if="task.frost" class="frost">❄</span> {{ task.summary }}
       </RouterLink>
       <span v-else class="summary" :class="{ done: task.completed }">{{ task.summary }}</span>
       <div v-if="task.description" class="muted description">{{ task.description }}</div>
@@ -78,6 +78,10 @@ async function remove() {
 .summary.done {
   text-decoration: line-through;
   color: var(--hs-text-muted);
+}
+
+.frost {
+  color: var(--hs-frost);
 }
 
 .description {

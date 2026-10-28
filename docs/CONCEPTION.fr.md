@@ -257,4 +257,10 @@ Avant chaque publication : tests automatisés, puis essai sur une installation H
 - **Calendrier** : page de l'application (12 mois, par mois) ; dans HA, les travaux s'ajoutent aux périodes, un jour chacun, avec description ; ceux qui sont faits sont marqués ✓.
 - Les travaux de pépinière (repiquage) disparaissent de la liste de tâches une fois la culture mise en place.
 
+### Phase B, les gelées (v0.6.0, 28/10/2026)
+
+- **Dates de gelée calculées** : Réglages → « Calculer d'après la météo passée ». Archive Open-Meteo (minimales journalières à 2 m, 30 ans), position de HA arrondie à 0,1° (≈ 10 km), altitude de HA si elle est renseignée. Gel = minimale ≤ 0 °C. Dates retenues : celles qui ne sont dépassées qu'une année sur dix (dernière gelée au printemps, première en automne) ; la médiane est affichée pour comparaison. Proposées, jamais enregistrées sans action. Pour le jardin (28/10/2026) : 30 avril et 21 octobre (médianes 15 avril et 12 novembre).
+- **Prévisions** : l'app lit toutes les heures `weather.get_forecasts` (quotidien, `templow`) de l'entité météo choisie (par défaut la première ; ici `weather.maison`, IRM). Nuit gélive sur 7 jours : tâche « Protéger du gel » pour les cultures en place (sensibles ≤ 1 °C, semi-rustiques ≤ −2 °C, serre +3 °C), due la veille ; plantation, mise en place et semis en place des cultures sensibles reportés au lendemain de la dernière nuit gélive (❄ dans les étapes et les tâches). Bandeau sur Aujourd'hui ; capteur HA « Prochaine gelée » (date + température).
+- **Pas encore** : décaler tout le calendrier selon la chaleur réellement observée (degrés-jours), alertes de canicule et d'arrosage (phase C).
+
 *Décisions déjà prises : nom Homestead (27/10) ; Plant-it supprimé (27/10) ; jardin = un carré surélevé, une serre avec 2 bacs, un potager d'environ 8 × 4 m (27/10) ; périmètre, architecture et ordre des phases (27/10).*

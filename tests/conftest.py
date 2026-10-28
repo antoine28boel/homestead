@@ -101,6 +101,7 @@ SUMMARY: dict[str, Any] = {
             "generated": True,
         },
     ],
+    "frost": {"day": "2027-03-22", "low": -1.5},
     "events": [
         {
             "uid": "tomato1.sow",

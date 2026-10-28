@@ -53,6 +53,10 @@ async def test_entities(hass: HomeAssistant, loaded_entry: MockConfigEntry) -> N
     assert calendar.attributes["message"] == "Semis : Tomate Cœur de bœuf"
     assert calendar.attributes["location"] == "Potager"
 
+    frost = hass.states.get(_entity_id(hass, "sensor", f"{INSTANCE_ID}_next_frost"))
+    assert frost.state == "2027-03-22"
+    assert frost.attributes["temperature"] == -1.5
+
     stage = hass.states.get(_entity_id(hass, "select", "tomato1_stage"))
     assert stage.state == "sown"
     assert stage.attributes["sown"] == "2027-03-20"

@@ -5,11 +5,12 @@ import { api } from "../api.js";
 import PlanCanvas from "../components/PlanCanvas.vue";
 import Sheet from "../components/Sheet.vue";
 import TaskRow from "../components/TaskRow.vue";
-import { formatDate, t } from "../i18n.js";
+import { formatDate, formatNumber, t } from "../i18n.js";
 import { familyColor } from "../plan.js";
 import { failed, store, today } from "../store.js";
 
 const tasks = ref(null);
+const nights = ref([]);
 const sowNow = ref([]);
 const plan = ref(null);
 const newItem = ref("");
@@ -18,15 +19,25 @@ const openSpace = ref(null);
 
 async function load() {
   try {
-    [tasks.value, sowNow.value, plan.value] = await Promise.all([
+    [tasks.value, sowNow.value, plan.value, { nights: nights.value }] = await Promise.all([
       api("tasks"),
       api("sow-now"),
       api("plan"),
+      api("weather"),
     ]);
   } catch (error) {
     failed(error);
   }
 }
+
+// The first frosty night of the coming week.
+const frost = computed(() => {
+  const now = today();
+  const week = new Date(now);
+  week.setDate(week.getDate() + 7);
+  const end = week.toISOString().slice(0, 10);
+  return nights.value.find((night) => night.day >= now && night.day < end && night.low <= 0);
+});
 
 const drawn = computed(() => plan.value?.spaces.some((space) => space.placed));
 const space = computed(() => plan.value?.spaces.find((item) => item.id === openSpace.value));
@@ -109,6 +120,13 @@ async function addItem() {
   <p v-else-if="plan" class="card">
     {{ t("draw_plan_help") }}
     <RouterLink to="/plan">{{ t("draw_plan") }}</RouterLink>
+  </p>
+
+  <p v-if="frost" class="card frost">
+    ❄ {{ t("frost_ahead", {
+      day: formatDate(frost.day, { weekday: "long", day: "numeric", month: "long" }),
+      low: formatNumber(frost.low),
+    }) }}
   </p>
 
   <h2>{{ t("to_do") }}</h2>
@@ -207,6 +225,13 @@ async function addItem() {
   display: block;
   text-align: right;
   margin-top: 4px;
+}
+
+.frost {
+  margin-top: 12px;
+  background: color-mix(in srgb, #4fa3e0 16%, var(--hs-card));
+  color: var(--hs-frost);
+  font-weight: 500;
 }
 
 .dot {

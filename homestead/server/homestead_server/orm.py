@@ -87,6 +87,8 @@ class GardenRow(Base):
     background_scale: Mapped[float | None] = mapped_column(Float)
     """Metres per pixel; None until calibrated."""
     background_opacity: Mapped[float] = mapped_column(Float, default=0.6)
+    weather_entity: Mapped[str | None] = mapped_column(String(255))
+    """Forecast that warns of frost; None takes the first one, "" none."""
 
 
 class SpaceRow(Base):

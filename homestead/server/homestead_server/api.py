@@ -38,6 +38,7 @@ from sqlalchemy.orm import Session
 
 from . import __version__
 from .catalog import Species, load_catalog
+from .climate import ClimateError, Night, fetch_minimums, frost_dates
 from .config import INGRESS_IP, Settings
 from .const import (
     BACKGROUND_TYPES,
@@ -55,7 +56,13 @@ from .const import (
 from .db import make_engine, make_sessions, migrate
 from .events import Events
 from .garden import Clock, Garden, ensure_garden, is_generated
-from .ha import announce, fetch_config
+from .ha import (
+    announce,
+    connected,
+    fetch_config,
+    fetch_forecast,
+    weather_entities,
+)
 from .layout import DIRECTIONS, LAYOUTS
 from .models import MonthDay
 from .orm import (
@@ -80,6 +87,7 @@ TOKEN_COOKIE = "homestead_token"
 OPEN_PATHS = ("/api/health", "/login")
 # Calendar events sent with the summary, for the calendar's current event.
 SUMMARY_EVENT_DAYS = 400
+FORECAST_REFRESH = timedelta(hours=1)
 
 ASGIApp = Callable[
     [MutableMapping[str, Any], Callable[[], Awaitable[Any]], Callable[..., Any]],
@@ -166,8 +174,17 @@ class GardenIn(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=100)
     last_frost: str | None = None
     first_frost: str | None = None
+    weather_entity: str | None = Field(None, max_length=255)
+    """An entity id, or "" for none."""
 
     _frost = field_validator("last_frost", "first_frost")(_month_day)
+
+    @field_validator("weather_entity")
+    @classmethod
+    def _weather(cls, value: str | None) -> str | None:
+        if value and not value.startswith("weather."):
+            raise ValueError("must be a weather entity")
+        return value
 
 
 class SpaceIn(BaseModel):
@@ -341,7 +358,7 @@ SessionDep = Annotated[Session, Depends(_session)]
 
 def _garden(request: Request, session: SessionDep) -> Garden:
     state = request.app.state
-    return Garden(session, state.catalog, state.texts, state.clock)
+    return Garden(session, state.catalog, state.texts, state.clock, state.forecast)
 
 
 GardenDep = Annotated[Garden, Depends(_garden)]
@@ -376,6 +393,7 @@ def garden_out(row: GardenRow) -> dict[str, Any]:
         "name": row.name,
         "last_frost": row.last_frost,
         "first_frost": row.first_frost,
+        "weather_entity": row.weather_entity,
     }
 
 
@@ -524,7 +542,58 @@ def put_garden(
     for key, value in body.model_dump(exclude_none=True).items():
         setattr(garden.row, key, value)
     _save(request, session)
+    if body.weather_entity is not None:
+        _refresh_forecast(request.app.state)
     return garden_out(garden.row)
+
+
+def _night(night: Night) -> dict[str, Any]:
+    return {"day": night.day.isoformat(), "low": night.low}
+
+
+@api.get("/weather")
+async def weather(request: Request) -> dict[str, Any]:
+    """Weather entities to choose from, and the forecast in use."""
+    state = request.app.state
+    return {
+        "connected": connected(state.settings),
+        "entity_id": state.weather_entity,
+        "entities": await weather_entities(state.settings),
+        "nights": [_night(night) for night in state.forecast],
+    }
+
+
+@api.post("/garden/frost-dates")
+async def compute_frost_dates(request: Request) -> dict[str, Any]:
+    """Frost dates from the past thirty years of weather where the garden is.
+
+    Sends the garden's position, rounded to about 10 km, to Open-Meteo. The
+    dates are proposed, not saved.
+    """
+    state = request.app.state
+    config = state.ha_config
+    if config.get("longitude") is None:
+        raise HTTPException(409, "The garden's position is unknown")
+    try:
+        minimums = await fetch_minimums(
+            config["latitude"],
+            config["longitude"],
+            config.get("elevation"),
+            state.clock.today().year - 1,
+            config["time_zone"],
+        )
+    except ClimateError as err:
+        raise HTTPException(502, f"Weather archive unavailable: {err}") from err
+    found = frost_dates(minimums, south=config["latitude"] < 0)
+    if found is None:
+        raise HTTPException(422, "Frost is rare here: keep your own dates")
+    return {
+        "last_frost": str(found.last),
+        "first_frost": str(found.first),
+        "last_median": str(found.last_median),
+        "first_median": str(found.first_median),
+        "years": found.years,
+    }
 
 
 @api.get("/catalog")
@@ -1081,6 +1150,7 @@ def summary(request: Request, session: SessionDep, garden: GardenDep) -> dict[st
         ],
         "tasks": garden.task_list(),
         "events": garden.calendar(today, today + timedelta(days=SUMMARY_EVENT_DAYS)),
+        "frost": _night(frost) if (frost := garden.next_frost()) else None,
         "sow_now": {row.id: garden.sow_now(row) for row in garden.spaces()},
         "stages": STAGES,
         "plan": plan_out(garden, _plan_items(session), with_background=False),
@@ -1152,6 +1222,34 @@ async def _midnight(events: Events, clock: Clock) -> None:
         events.notify("day")
 
 
+def _refresh_forecast(state: Any) -> None:
+    """Read the forecast again now (from any thread)."""
+    if state.forecast_wake is not None:
+        state.loop.call_soon_threadsafe(state.forecast_wake.set)
+
+
+async def _forecasts(state: Any) -> None:
+    """Keep the forecast of the garden's weather entity, hourly."""
+    while True:
+        with state.sessions() as session:
+            row = session.get(GardenRow, 1)
+            chosen = row.weather_entity if row else None
+        if chosen is None:
+            entities = await weather_entities(state.settings)
+            chosen = entities[0]["entity_id"] if entities else ""
+        forecast = await fetch_forecast(state.settings, chosen) if chosen else []
+        state.weather_entity = chosen or None
+        # A failed read keeps the last forecast: past nights drop out anyway.
+        if forecast is not None and forecast != state.forecast:
+            state.forecast = forecast
+            state.events.notify()
+        state.forecast_wake.clear()
+        with suppress(TimeoutError):
+            await asyncio.wait_for(
+                state.forecast_wake.wait(), FORECAST_REFRESH.total_seconds()
+            )
+
+
 def create_app(
     settings: Settings,
     *,
@@ -1174,8 +1272,13 @@ def create_app(
         state.sessions = make_sessions(engine)
         with state.sessions() as session:
             ensure_garden(session, config["location_name"], config["latitude"])
-        state.events.bind(asyncio.get_running_loop())
+        state.loop = asyncio.get_running_loop()
+        state.events.bind(state.loop)
         ticker = asyncio.create_task(_midnight(state.events, state.clock))
+        watcher = None
+        if connected(settings):
+            state.forecast_wake = asyncio.Event()
+            watcher = asyncio.create_task(_forecasts(state))
         if settings.app_mode:
             await announce(settings, token)
         else:
@@ -1183,9 +1286,11 @@ def create_app(
         try:
             yield
         finally:
-            ticker.cancel()
-            with suppress(asyncio.CancelledError):
-                await ticker
+            for task in (ticker, watcher):
+                if task is not None:
+                    task.cancel()
+                    with suppress(asyncio.CancelledError):
+                        await task
             engine.dispose()
 
     settings.data_dir.mkdir(parents=True, exist_ok=True)
@@ -1202,6 +1307,9 @@ def create_app(
     app.state.instance_id = settings.instance_id()
     app.state.catalog = load_catalog()
     app.state.events = Events()
+    app.state.forecast = []
+    app.state.weather_entity = None
+    app.state.forecast_wake = None
     app.include_router(api)
 
     @app.get("/login", include_in_schema=False)

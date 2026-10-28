@@ -58,6 +58,7 @@
       "harvest": { "name": "Récolte prévue" },
       "harvested": { "name": "Récolté" },
       "next_task": { "name": "Prochaine tâche" },
+      "next_frost": { "name": "Prochaine gelée" },
       "next_task_due": { "name": "Échéance de la prochaine tâche" },
       "plantings": { "name": "Cultures" },
       "sow_now": { "name": "À lancer maintenant" }

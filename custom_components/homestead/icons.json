@@ -20,6 +20,7 @@
       "harvest": { "default": "mdi:basket-clock" },
       "harvested": { "default": "mdi:basket" },
       "next_task": { "default": "mdi:shovel" },
+      "next_frost": { "default": "mdi:snowflake-thermometer" },
       "next_task_due": { "default": "mdi:calendar-alert" },
       "plantings": { "default": "mdi:flower" },
       "sow_now": { "default": "mdi:seed" }

@@ -15,6 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .catalog import Species
+from .climate import Night, frosty_nights, harm_limit
 from .const import (
     DEFAULT_FIRST_FROST_NORTH,
     DEFAULT_FIRST_FROST_SOUTH,
@@ -22,8 +23,14 @@ from .const import (
     DEFAULT_LAST_FROST_NORTH,
     DEFAULT_LAST_FROST_SOUTH,
     DONE_VISIBLE_DAYS,
+    METHOD_SOW_DIRECT,
+    SPACE_GREENHOUSE,
     STAGE_FINISHED,
+    STAGE_GROWING,
+    STAGE_HARVESTING,
     STAGE_PLANNED,
+    STAGE_SOWN,
+    STAGE_TRANSPLANTED,
     STAGES,
     TASK_HORIZON_DAYS,
 )
@@ -96,6 +103,15 @@ PERIOD_KINDS = (
     KIND_HARVEST_START,
 )
 
+# Starting steps put off while frost is forecast, and the tolerances concerned.
+HELD_KINDS = {
+    KIND_PLANT: ("tender", "half_hardy"),
+    KIND_TRANSPLANT: ("tender", "half_hardy"),
+    KIND_SOW_DIRECT: ("tender",),
+}
+# Stages at which a crop stands in its space.
+IN_PLACE = (STAGE_TRANSPLANTED, STAGE_GROWING, STAGE_HARVESTING)
+
 STEP_DONE = "done"
 STEP_DISMISSED = "dismissed"
 STEP_OPEN = "open"
@@ -118,12 +134,14 @@ class Garden:
         catalog: dict[str, Species],
         texts: Texts,
         clock: Clock,
+        forecast: list[Night] | None = None,
     ) -> None:
         """Bind to a database session."""
         self.session = session
         self.catalog = catalog
         self.texts = texts
         self.clock = clock
+        self.forecast = forecast or []
         row = session.get(GardenRow, 1)
         assert row is not None, "ensure_garden runs at startup"
         self.row = row
@@ -310,7 +328,9 @@ class Garden:
             return self.texts.label(task.label)
         return self.texts(f"step_{task.kind}")
 
-    def _step(self, task: Task, status: str, day: date) -> dict[str, Any]:
+    def _step(
+        self, task: Task, status: str, day: date, held: Night | None = None
+    ) -> dict[str, Any]:
         label = self._label(task)
         upcoming = status in (STEP_OPEN, STEP_PLANNED)
         return {
@@ -323,6 +343,7 @@ class Garden:
             else None,
             "status": status,
             "action": task.action,
+            "frost": self._frost_out(held) if held else None,
         }
 
     def _steps(
@@ -366,10 +387,75 @@ class Garden:
     ) -> list[dict[str, Any]]:
         """Every step of a planting, done, open or still to come."""
         states = self.task_states() if states is None else states
+        planting = self.planting_model(row)
         return [
-            self._step(task, status, day)
+            self._step(
+                task,
+                status,
+                day,
+                self._held(planting, task) if status == STEP_OPEN else None,
+            )
             for task, status, day in self._steps(row, states)
         ]
+
+    # Frost
+
+    def _frost_nights(self, planting: Planting, frost: str) -> list[Night]:
+        greenhouse = bool(planting.space and planting.space.type == SPACE_GREENHOUSE)
+        limit = harm_limit(frost, greenhouse)
+        if limit is None:
+            return []
+        return frosty_nights(self.forecast, limit, self.clock.today())
+
+    def next_frost(self) -> Night | None:
+        """The first frosty night of the coming week, in the open."""
+        nights = frosty_nights(self.forecast, 0.0, self.clock.today())
+        return nights[0] if nights else None
+
+    def _frost_out(self, night: Night) -> dict[str, Any]:
+        return {"day": night.day.isoformat(), "low": night.low}
+
+    def _held(self, planting: Planting, task: Task) -> Night | None:
+        """The last frosty night that puts off this starting step."""
+        frost = planting.species.frost
+        if frost not in HELD_KINDS.get(task.kind, ()):
+            return None
+        nights = self._frost_nights(planting, frost)
+        return nights[-1] if nights else None
+
+    def _frost_task(
+        self, row: PlantingRow, planting: Planting
+    ) -> dict[str, Any] | None:
+        """Protect a crop standing in the open from frost in the forecast."""
+        in_place = row.stage in IN_PLACE or (
+            row.stage == STAGE_SOWN and row.method == METHOD_SOW_DIRECT
+        )
+        if not in_place:
+            return None
+        nights = self._frost_nights(planting, planting.species.frost)
+        if not nights:
+            return None
+        first = nights[0]
+        coldest = min(nights, key=lambda night: night.low)
+        # The evening before, as forecasts date a night either way.
+        due = max(self.clock.today(), first.day - timedelta(days=1))
+        return {
+            "uid": f"{row.id}.frost.{first.day.isoformat()}",
+            "summary": self.texts(
+                "frost", name=self.planting_name(row), space=self.space_name(row)
+            ),
+            "due": due.isoformat(),
+            "description": self.texts(
+                "frost_night",
+                low=self.texts.temperature(coldest.low),
+                day=self.texts.date(coldest.day),
+            ),
+            "completed": None,
+            "planting_id": row.id,
+            "action": None,
+            "generated": True,
+            "frost": self._frost_out(coldest),
+        }
 
     def task_states(self) -> dict[str, TaskStateRow]:
         return {row.uid: row for row in self.session.scalars(select(TaskStateRow))}
@@ -386,18 +472,34 @@ class Garden:
             uid = f"{row.id}.{task.key}"
             if uid in states:
                 continue
+            due = task.due
+            description = self._description(row, task)
+            held = self._held(planting, task)
+            if held is not None:
+                due = max(due, held.day + timedelta(days=1))
+                hold = self.texts(
+                    "frost_hold",
+                    day=self.texts.date(held.day),
+                    low=self.texts.temperature(held.low),
+                    until=self.texts.date(due),
+                )
+                description = f"{hold}\n{description}" if description else hold
             result.append(
                 {
                     "uid": uid,
                     "summary": self._summary(row, task),
-                    "due": task.due.isoformat(),
-                    "description": self._description(row, task),
+                    "due": due.isoformat(),
+                    "description": description,
                     "completed": None,
                     "planting_id": row.id,
                     "action": task.action,
                     "generated": True,
+                    "frost": self._frost_out(held) if held else None,
                 }
             )
+        alert = self._frost_task(row, planting)
+        if alert is not None and alert["uid"] not in states:
+            result.append(alert)
         return sorted(result, key=lambda task: task["due"])
 
     def next_task(

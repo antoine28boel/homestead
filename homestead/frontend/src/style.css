@@ -7,6 +7,7 @@
   --hs-divider: rgba(0, 0, 0, 0.1);
   --hs-error: #c62828;
   --hs-warning: #e08600;
+  --hs-frost: #1f6fb2;
   --hs-radius: 12px;
   --hs-nav-height: 64px;
   color-scheme: light dark;
@@ -26,6 +27,7 @@
     --hs-divider: rgba(255, 255, 255, 0.12);
     --hs-error: #ef5350;
     --hs-warning: #ffa726;
+    --hs-frost: #7cc0f2;
   }
 }
 

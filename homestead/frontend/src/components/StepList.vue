@@ -40,6 +40,9 @@ function late(step) {
       <span class="grow">
         <span class="label">{{ step.label }}</span>
         <small class="muted">{{ when(step) }}</small>
+        <small v-if="step.frost" class="frost">
+          ❄ {{ t("frost_wait", { day: formatDate(step.frost.day, { weekday: "long", day: "numeric" }) }) }}
+        </small>
       </span>
       <span v-if="due(step)" class="badge" :class="{ late: late(step) }">
         {{ t(late(step) ? "overdue" : "to_do") }}
@@ -112,6 +115,11 @@ li + li::before {
 
 .label {
   display: block;
+}
+
+.frost {
+  display: block;
+  color: var(--hs-frost);
 }
 
 .open .label {

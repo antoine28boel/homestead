@@ -17,6 +17,9 @@ TEXTS: dict[str, dict[str, str]] = {
         "plant": "Plant out: {name} ({space})",
         "transplant": "Transplant: {name} → {space}",
         "harden_off": "Harden off the seedlings: {name}",
+        "frost": "Protect from frost: {name} ({space})",
+        "frost_night": "Forecast low: {low} °C on {day}.",
+        "frost_hold": "Frost forecast on {day} ({low} °C): wait until {until}.",
         "harvest_start": "Start harvesting: {name} ({space})",
         "harvest_end": "End of harvest, clear the space: {name} ({space})",
         "crop": "{label}: {name} ({space})",
@@ -38,6 +41,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "choice_plant": "Plant out, {start} – {end}",
         "no_space": "?",
         "date": "%Y-%m-%d",
+        "decimal": ".",
     },
     "fr": {
         "sow_indoors": "Semer sous abri : {name}",
@@ -45,6 +49,9 @@ TEXTS: dict[str, dict[str, str]] = {
         "plant": "Planter : {name} ({space})",
         "transplant": "Repiquer : {name} → {space}",
         "harden_off": "Endurcir les plants : {name}",
+        "frost": "Protéger du gel : {name} ({space})",
+        "frost_night": "Minimum prévu : {low} °C le {day}.",
+        "frost_hold": "Gel prévu le {day} ({low} °C) : attendre le {until}.",
         "harvest_start": "Début de récolte : {name} ({space})",
         "harvest_end": "Fin de récolte, libérer la place : {name} ({space})",
         "crop": "{label} : {name} ({space})",
@@ -66,6 +73,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "choice_plant": "Plantation, du {start} au {end}",
         "no_space": "?",
         "date": "%d/%m/%Y",
+        "decimal": ",",
     },
 }
 
@@ -86,6 +94,11 @@ class Texts:
     def date(self, value: date) -> str:
         """Format a date the way the language usually writes it."""
         return value.strftime(self._texts["date"])
+
+    def temperature(self, value: float) -> str:
+        """A temperature to the tenth of a degree, without trailing zero."""
+        text = f"{round(value, 1):g}".replace(".", self._texts["decimal"])
+        return text.replace("-", "\u2212")
 
     def label(self, label: dict[str, str]) -> str:
         """Label of a catalogue task."""

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 import pytest
 
 from homestead_server import api as api_module
+from homestead_server.climate import Night
 from homestead_server.config import INGRESS_IP
 
 from .conftest import BRUSSELS, FakeClock
@@ -36,6 +37,7 @@ def test_info_and_garden(client: TestClient) -> None:
         "name": "Jardin",
         "last_frost": "05-15",
         "first_frost": "10-15",
+        "weather_entity": None,
     }
     response = client.put("/api/garden", json={"last_frost": "2027-4-30"})
     assert response.json()["last_frost"] == "04-30"
@@ -179,7 +181,132 @@ def test_planting_steps(client: TestClient, spaces: dict[str, str]) -> None:
         "period": None,
         "status": "open",
         "action": None,
+        "frost": None,
     }
+
+
+def _forecast(client: TestClient, *lows: tuple[str, float]) -> None:
+    client.app.state.forecast = [  # type: ignore[attr-defined]
+        Night(date.fromisoformat(day), low) for day, low in lows
+    ]
+
+
+def test_frost_alert(
+    client: TestClient, spaces: dict[str, str], clock: FakeClock
+) -> None:
+    """Tender crops in the open get a task before a frosty night."""
+    clock.value = datetime(2027, 5, 20, 9, 0, tzinfo=BRUSSELS)
+    tomato = _plant(client, "tomato", spaces["plot"])
+    sheltered = _plant(client, "tomato", spaces["greenhouse"])
+    leek = _plant(client, "leek", spaces["plot"])
+    for planting in (tomato, sheltered, leek):
+        client.post(
+            f"/api/plantings/{planting['id']}/stage",
+            json={"stage": "transplanted", "day": "2027-05-18"},
+        )
+    _forecast(client, ("2027-05-22", 0.5), ("2027-05-23", -1.5))
+
+    tasks = client.get("/api/tasks").json()
+    frost = [task for task in tasks if ".frost." in task["uid"]]
+    assert [task["planting_id"] for task in frost] == [tomato["id"]]
+    assert frost[0]["uid"] == f"{tomato['id']}.frost.2027-05-22"
+    assert frost[0]["summary"] == "Protéger du gel : Tomate (Potager)"
+    assert frost[0]["due"] == "2027-05-21"
+    assert frost[0]["description"] == "Minimum prévu : \u22121,5 °C le 23/05/2027."
+    assert client.get("/api/summary").json()["frost"] == {
+        "day": "2027-05-23",
+        "low": -1.5,
+    }
+
+    # Ticked, it stays done for this cold spell.
+    client.patch(f"/api/tasks/{frost[0]['uid']}", json={"completed": True})
+    detail = client.get(f"/api/plantings/{tomato['id']}").json()
+    assert not [task for task in detail["tasks"] if ".frost." in task["uid"]]
+    assert detail["stage"] == "transplanted"
+
+    def alerts() -> list[str]:
+        return [
+            task["planting_id"]
+            for task in client.get("/api/tasks").json()
+            if ".frost." in task["uid"] and not task["completed"]
+        ]
+
+    # A greenhouse only needs help against a harder frost.
+    _forecast(client, ("2027-05-22", -3.0))
+    assert alerts() == [sheltered["id"]]
+    _forecast(client, ("2027-05-25", -1.0))
+    assert alerts() == [tomato["id"]]
+    _forecast(client)
+    assert client.get("/api/summary").json()["frost"] is None
+
+
+def test_frost_holds_planting_out(
+    client: TestClient, spaces: dict[str, str], clock: FakeClock
+) -> None:
+    """Planting out waits until after the frost forecast."""
+    clock.value = datetime(2027, 5, 20, 9, 0, tzinfo=BRUSSELS)
+    tomato = _plant(client, "tomato", spaces["plot"], method="plant")
+    lettuce = _plant(client, "lettuce", spaces["plot"], method="plant")
+    _forecast(client, ("2027-05-21", -1.0), ("2027-05-24", -0.5))
+    detail = client.get(f"/api/plantings/{tomato['id']}").json()
+    plant = next(task for task in detail["tasks"] if task["uid"].endswith(".plant"))
+    assert plant["due"] == "2027-05-25"
+    assert plant["frost"] == {"day": "2027-05-24", "low": -0.5}
+    assert plant["description"].startswith(
+        "Gel prévu le 24/05/2027 (\u22120,5 °C) : attendre le 25/05/2027."
+    )
+    step = next(step for step in detail["steps"] if step["key"] == "plant")
+    assert step["frost"] == {"day": "2027-05-24", "low": -0.5}
+
+    # Half-hardy lettuce does not mind a light frost.
+    detail = client.get(f"/api/plantings/{lettuce['id']}").json()
+    assert detail["tasks"][0]["frost"] is None
+
+
+def test_weather_settings(client: TestClient) -> None:
+    """The weather entity is chosen in the settings."""
+    weather = client.get("/api/weather").json()
+    assert weather == {
+        "connected": False,
+        "entity_id": None,
+        "entities": [],
+        "nights": [],
+    }
+    response = client.put("/api/garden", json={"weather_entity": "weather.home"})
+    assert response.json()["weather_entity"] == "weather.home"
+    assert client.put("/api/garden", json={"weather_entity": ""}).status_code == 200
+    bad = client.put("/api/garden", json={"weather_entity": "sensor.temperature"})
+    assert bad.status_code == 422
+
+
+def test_compute_frost_dates(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Frost dates come from thirty years of minimums, and are only proposed."""
+    assert client.post("/api/garden/frost-dates").status_code == 409
+    state = client.app.state  # type: ignore[attr-defined]
+    state.ha_config = state.ha_config | {"longitude": 4.35, "elevation": 60}
+    asked: dict[str, Any] = {}
+
+    async def minimums(*args: Any) -> list[tuple[date, float]]:
+        asked["args"] = args
+        return [
+            (date(year, month, 10), -1.0 if month in (4, 11) else 6.0)
+            for year in range(1997, 2027)
+            for month in range(1, 13)
+        ]
+
+    monkeypatch.setattr(api_module, "fetch_minimums", minimums)
+    found = client.post("/api/garden/frost-dates").json()
+    assert found == {
+        "last_frost": "04-10",
+        "first_frost": "11-10",
+        "last_median": "04-10",
+        "first_median": "11-10",
+        "years": 30,
+    }
+    assert asked["args"] == (50.8, 4.35, 60, 2026, "Europe/Brussels")
+    assert client.get("/api/garden").json()["last_frost"] == "05-15"
 
 
 def test_dismiss_task(client: TestClient, spaces: dict[str, str]) -> None:
