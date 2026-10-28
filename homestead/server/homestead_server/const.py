@@ -24,6 +24,35 @@ DEFAULT_FROST_SHIFT: Final = {
     SPACE_CONTAINER: 0,
 }
 
+SHAPE_RECT: Final = "rect"
+SHAPE_ROUND: Final = "round"
+SHAPES: Final = (SHAPE_RECT, SHAPE_ROUND)
+
+# Things drawn on the plan besides the spaces.
+PLAN_ITEM_KINDS: Final = (
+    "lawn",
+    "path",
+    "terrace",
+    "water",
+    "tree",
+    "shrub",
+    "hedge",
+    "compost",
+    "tank",
+    "shed",
+    "greenhouse",
+    "other",
+)
+# Size of an empty plan, in metres.
+DEFAULT_PLAN_SIZE: Final = (12.0, 9.0)
+# Largest background accepted, in bytes; the interface shrinks photos first.
+MAX_BACKGROUND_BYTES: Final = 20_000_000
+BACKGROUND_TYPES: Final = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+}
+
 METHOD_SOW_INDOORS: Final = "sow_indoors"
 METHOD_SOW_DIRECT: Final = "sow_direct"
 METHOD_PLANT: Final = "plant"

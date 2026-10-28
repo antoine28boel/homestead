@@ -65,7 +65,10 @@ async function archive(space, value) {
 </script>
 
 <template>
-  <h1>{{ t("spaces") }}</h1>
+  <div class="row">
+    <h1 class="grow">{{ t("spaces") }}</h1>
+    <RouterLink class="button" to="/plan">{{ t("plan") }}</RouterLink>
+  </div>
 
   <div class="list">
     <button v-for="space in store.spaces" :key="space.id" class="list-item" @click="edit(space)">

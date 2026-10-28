@@ -2,13 +2,13 @@
 
 Your whole homestead in Home Assistant: vegetable garden, greenhouse, orchard and chicken coop. Every planting, season after season, with photos.
 
-> **Status: early development.** Version 0.3 is the first version of the **app + companion integration**: spaces, seasons, crops, stages, tasks, calendar, journal and harvests. Not ready for everyday use yet.
+> **Status: early development.** Version 0.4 adds the **garden plan**: draw it over an aerial view or a drone photo, lay out every crop (grid, rows, staggered, free), and see it come alive on a dashboard card with the season and the weather. Version 0.3 brought the app + companion integration: spaces, seasons, crops, stages, tasks, calendar, journal and harvests. Not ready for everyday use yet.
 
 ## Goals
 
 - **A crop calendar that works anywhere.** Sowing, transplanting and harvest windows follow *your* average frost dates, in both hemispheres.
 - **Every planting, year after year:** stages, journal, harvests, photos, comparison between seasons, rotation and companion planting checks, seed stock, succession sowing.
-- **A garden plan** you draw yourself.
+- **A garden plan** you draw yourself, over an aerial view or a drone photo, with every plant in its place; on a dashboard it follows the season, the weather and the growth of each crop.
 - **Native to-do list and calendar** in Home Assistant, plus advice for each crop.
 - **Water and climate:** a FAO-56 water balance that knows what grows in each bed and at which stage, soil moisture sensors, rain tank, frost alerts, greenhouse overheating, growing degree days. Valves are driven by Home Assistant automations, always with a maximum duration.
 - **Photos:** album per planting, camera timelapse, growth tracking (green cover), plant identification, pest and disease detection, optional AI diagnosis.
@@ -26,7 +26,7 @@ Your whole homestead in Home Assistant: vegetable garden, greenhouse, orchard an
 On Home Assistant OS, the app installs from the app store and the integration from HACS; the app announces itself, so the integration needs no address or token. On Container or Core installs, the same Docker image runs next to Home Assistant:
 
 ```bash
-docker run -d --name homestead -p 8099:8099 -v homestead:/data -e TZ=Europe/Brussels -e HOMESTEAD_LANGUAGE=fr ghcr.io/antoine28boel/homestead:0.3.0
+docker run -d --name homestead -p 8099:8099 -v homestead:/data -e TZ=Europe/Brussels -e HOMESTEAD_LANGUAGE=fr ghcr.io/antoine28boel/homestead:0.4.0
 ```
 
 The API token for the integration is printed in the container log at startup. Set `HOMESTEAD_REQUIRE_TOKEN=1` to also protect the web interface; open it once with `/login?token=…`.

@@ -9,6 +9,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import ConfigType
 
 from .api import HomesteadClient
+from .card import async_setup_card
 from .const import DOMAIN
 from .coordinator import HomesteadConfigEntry, HomesteadCoordinator
 from .entity import async_sync_devices
@@ -25,8 +26,9 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Register the actions."""
+    """Register the actions and the plan card."""
     async_setup_services(hass)
+    await async_setup_card(hass)
     return True
 
 

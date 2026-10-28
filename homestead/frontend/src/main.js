@@ -6,11 +6,13 @@ import { adoptHomeAssistantTheme } from "./theme.js";
 import { start } from "./store.js";
 import "./style.css";
 
+import PlanEditor from "./views/PlanEditor.vue";
 import PlantingDetail from "./views/PlantingDetail.vue";
 import PlantingNew from "./views/PlantingNew.vue";
 import Plantings from "./views/Plantings.vue";
 import QuickEntry from "./views/QuickEntry.vue";
 import Settings from "./views/Settings.vue";
+import SpacePlan from "./views/SpacePlan.vue";
 import Spaces from "./views/Spaces.vue";
 import Today from "./views/Today.vue";
 
@@ -24,6 +26,8 @@ const router = createRouter({
     { path: "/plantings/:id", component: PlantingDetail, props: true },
     { path: "/log", component: QuickEntry },
     { path: "/spaces", component: Spaces },
+    { path: "/plan", component: PlanEditor },
+    { path: "/plan/spaces/:id", component: SpacePlan, props: true },
     { path: "/settings", component: Settings },
   ],
   scrollBehavior: () => ({ top: 0 }),

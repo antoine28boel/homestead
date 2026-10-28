@@ -2,21 +2,40 @@
 import { computed, ref, watch } from "vue";
 
 import { api } from "../api.js";
+import PlanCanvas from "../components/PlanCanvas.vue";
+import Sheet from "../components/Sheet.vue";
 import TaskRow from "../components/TaskRow.vue";
 import { formatDate, t } from "../i18n.js";
+import { familyColor } from "../plan.js";
 import { failed, store, today } from "../store.js";
 
 const tasks = ref(null);
 const sowNow = ref([]);
+const plan = ref(null);
 const newItem = ref("");
 const showDone = ref(false);
+const openSpace = ref(null);
 
 async function load() {
   try {
-    [tasks.value, sowNow.value] = await Promise.all([api("tasks"), api("sow-now")]);
+    [tasks.value, sowNow.value, plan.value] = await Promise.all([
+      api("tasks"),
+      api("sow-now"),
+      api("plan"),
+    ]);
   } catch (error) {
     failed(error);
   }
+}
+
+const drawn = computed(() => plan.value?.spaces.some((space) => space.placed));
+const space = computed(() => plan.value?.spaces.find((item) => item.id === openSpace.value));
+const spacePlantings = computed(() =>
+  (plan.value?.plantings ?? []).filter((planting) => planting.space_id === openSpace.value),
+);
+
+function selectOnPlan(selection) {
+  if (selection?.kind === "space") openSpace.value = selection.id;
 }
 watch(() => store.changes, load, { immediate: true });
 
@@ -76,6 +95,21 @@ async function addItem() {
     {{ t("no_spaces") }}
     <RouterLink to="/spaces">{{ t("add_space") }}</RouterLink>
   </p>
+  <div v-else-if="drawn" class="plan">
+    <div class="plan-box" :style="{ aspectRatio: `${plan.width + 1} / ${plan.height + 1}` }">
+      <PlanCanvas
+        :plan="plan"
+        :interactive="false"
+        :selected="openSpace ? { kind: 'space', id: openSpace } : null"
+        @select="selectOnPlan"
+      />
+    </div>
+    <RouterLink to="/plan" class="muted edit">{{ t("edit_plan") }}</RouterLink>
+  </div>
+  <p v-else-if="plan" class="card">
+    {{ t("draw_plan_help") }}
+    <RouterLink to="/plan">{{ t("draw_plan") }}</RouterLink>
+  </p>
 
   <h2>{{ t("to_do") }}</h2>
   <p v-if="tasks === null" class="muted">{{ t("loading") }}</p>
@@ -123,9 +157,64 @@ async function addItem() {
       </RouterLink>
     </div>
   </div>
+
+  <Sheet v-if="space" :title="space.name" @close="openSpace = null">
+    <div class="list">
+      <RouterLink
+        v-for="planting in spacePlantings"
+        :key="planting.id"
+        :to="`/plantings/${planting.id}`"
+        class="list-item"
+      >
+        <span class="dot" :style="{ background: familyColor(planting.family) }" />
+        <span class="grow">
+          {{ planting.name }}
+          <span class="muted">· {{ t(`stage_${planting.stage}`) }}</span>
+          <br />
+          <small v-if="planting.next_task" class="muted">
+            {{ t("next_task") }} : {{ planting.next_task.summary }} · {{ formatDate(planting.next_task.due) }}
+          </small>
+        </span>
+        <span v-if="planting.tasks_due" class="badge late">{{ t("tasks_due", { n: planting.tasks_due }) }}</span>
+      </RouterLink>
+      <div v-if="!spacePlantings.length" class="empty">{{ t("no_crops_here") }}</div>
+    </div>
+    <div class="actions">
+      <RouterLink class="button" :to="{ path: '/plantings/new', query: { space: space.id } }">
+        {{ t("new_planting") }}
+      </RouterLink>
+      <RouterLink class="button primary" :to="`/plan/spaces/${space.id}`">{{ t("arrange_crops") }}</RouterLink>
+    </div>
+  </Sheet>
 </template>
 
 <style scoped>
+.plan {
+  margin: 12px 0 4px;
+}
+
+.plan-box {
+  width: 100%;
+  max-height: 55vh;
+  border-radius: var(--hs-radius);
+  overflow: hidden;
+  border: 1px solid var(--hs-divider);
+  background: var(--hs-card);
+}
+
+.edit {
+  display: block;
+  text-align: right;
+  margin-top: 4px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex: none;
+}
+
 .group {
   min-height: 36px;
   padding-top: 6px;

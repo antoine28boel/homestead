@@ -7,6 +7,7 @@ from collections.abc import Awaitable, Callable, Iterator, MutableMapping
 from contextlib import asynccontextmanager, suppress
 from datetime import date, datetime, time, timedelta
 from http.cookies import SimpleCookie
+import json
 import logging
 from pathlib import Path
 import secrets
@@ -24,7 +25,12 @@ from fastapi import (
     Response,
     WebSocket,
 )
-from fastapi.responses import JSONResponse, PlainTextResponse, RedirectResponse
+from fastapi.responses import (
+    FileResponse,
+    JSONResponse,
+    PlainTextResponse,
+    RedirectResponse,
+)
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import func, select
@@ -34,9 +40,13 @@ from . import __version__
 from .catalog import Species, load_catalog
 from .config import INGRESS_IP, Settings
 from .const import (
+    BACKGROUND_TYPES,
     DEFAULT_FROST_SHIFT,
     HARVEST_UNITS,
     JOURNAL_KINDS,
+    MAX_BACKGROUND_BYTES,
+    PLAN_ITEM_KINDS,
+    SHAPES,
     STAGE_HARVESTING,
     STAGE_PLANNED,
     STAGES,
@@ -46,16 +56,19 @@ from .db import make_engine, make_sessions, migrate
 from .events import Events
 from .garden import Clock, Garden, ensure_garden, is_generated
 from .ha import announce, fetch_config
+from .layout import DIRECTIONS, LAYOUTS
 from .models import MonthDay
 from .orm import (
     GardenRow,
     HarvestRow,
     JournalRow,
+    PlanItemRow,
     PlantingRow,
     SpaceRow,
     TaskStateRow,
     TodoItemRow,
 )
+from .plan import item_out, plan_out, space_area
 from .planner import next_season
 from .texts import Texts
 
@@ -166,11 +179,36 @@ class SpaceIn(BaseModel):
     area: float | None = Field(None, ge=0)
     sort: int | None = None
     archived: bool | None = None
+    x: float | None = Field(None, ge=-1000, le=1000)
+    y: float | None = Field(None, ge=-1000, le=1000)
+    width: float | None = Field(None, gt=0, le=1000)
+    height: float | None = Field(None, gt=0, le=1000)
+    rotation: float | None = Field(None, ge=-360, le=360)
+    shape: str | None = None
 
     @field_validator("type")
     @classmethod
     def _type(cls, value: str | None) -> str | None:
         return _one_of(value, tuple(DEFAULT_FROST_SHIFT))
+
+    @field_validator("shape")
+    @classmethod
+    def _shape(cls, value: str | None) -> str | None:
+        return _one_of(value, SHAPES)
+
+
+# Fields that a null clears, rather than leaves unchanged.
+SPACE_CLEARABLE = ("frost_shift", "x", "y", "width", "height")
+PLACEMENT_FIELDS = (
+    "layout",
+    "region_x",
+    "region_y",
+    "region_width",
+    "region_height",
+    "spacing",
+    "row_spacing",
+    "points",
+)
 
 
 class PlantingIn(BaseModel):
@@ -184,6 +222,54 @@ class PlantingIn(BaseModel):
     variety: str | None = Field(None, max_length=100)
     quantity: int | None = Field(None, ge=1)
     notes: str | None = None
+    layout: str | None = None
+    region_x: float | None = Field(None, ge=0, le=1000)
+    region_y: float | None = Field(None, ge=0, le=1000)
+    region_width: float | None = Field(None, gt=0, le=1000)
+    region_height: float | None = Field(None, gt=0, le=1000)
+    spacing: float | None = Field(None, gt=0, le=1000)
+    """Centimetres."""
+    row_spacing: float | None = Field(None, gt=0, le=1000)
+    direction: str | None = None
+    points: list[tuple[float, float]] | None = Field(None, max_length=1000)
+
+    @field_validator("layout")
+    @classmethod
+    def _layout(cls, value: str | None) -> str | None:
+        return _one_of(value, LAYOUTS)
+
+    @field_validator("direction")
+    @classmethod
+    def _direction(cls, value: str | None) -> str | None:
+        return _one_of(value, DIRECTIONS)
+
+
+class PlanIn(BaseModel):
+    """Plan settings. A null size follows the background or the objects."""
+
+    width: float | None = Field(None, gt=0, le=2000)
+    height: float | None = Field(None, gt=0, le=2000)
+    background_scale: float | None = Field(None, gt=0, le=100)
+    """Metres per pixel of the background."""
+    background_opacity: float | None = Field(None, ge=0, le=1)
+
+
+class PlanItemIn(BaseModel):
+    """A new object of the plan, or changes to one."""
+
+    kind: str | None = None
+    label: str | None = Field(None, max_length=100)
+    x: float | None = Field(None, ge=-1000, le=1000)
+    y: float | None = Field(None, ge=-1000, le=1000)
+    width: float | None = Field(None, gt=0, le=1000)
+    height: float | None = Field(None, gt=0, le=1000)
+    rotation: float | None = Field(None, ge=-360, le=360)
+    sort: int | None = None
+
+    @field_validator("kind")
+    @classmethod
+    def _kind(cls, value: str | None) -> str | None:
+        return _one_of(value, PLAN_ITEM_KINDS)
 
 
 class StageIn(BaseModel):
@@ -302,8 +388,10 @@ def space_out(row: SpaceRow) -> dict[str, Any]:
         "frost_shift": row.frost_shift,
         "effective_frost_shift": Garden.space_model(row).frost_shift,
         "area": row.area,
+        "surface": space_area(row),
         "sort": row.sort,
         "archived": row.archived,
+        "placed": row.placed,
     }
 
 
@@ -417,6 +505,8 @@ def info(request: Request, garden: GardenDep) -> dict[str, Any]:
         "space_types": list(DEFAULT_FROST_SHIFT),
         "journal_kinds": JOURNAL_KINDS,
         "harvest_units": HARVEST_UNITS,
+        "plan_item_kinds": PLAN_ITEM_KINDS,
+        "layouts": LAYOUTS,
     }
 
 
@@ -484,7 +574,7 @@ def update_space(
     """Change a space. A null frost_shift goes back to the type's default."""
     row = _get(session, SpaceRow, space_id)
     for key, value in body.model_dump(exclude_unset=True).items():
-        if value is None and key != "frost_shift":
+        if value is None and key not in SPACE_CLEARABLE:
             continue
         setattr(row, key, value)
     _save(request, session)
@@ -631,8 +721,13 @@ def update_planting(
     method = changes.get("method") or row.method
     if method not in species.methods:
         raise HTTPException(422, f"{species.id} cannot be started with {method}")
+    if changes.get("points") is not None:
+        changes["points"] = json.dumps([list(point) for point in changes["points"]])
+    if changes.get("space_id", row.space_id) != row.space_id:
+        for key in ("region_x", "region_y", "region_width", "region_height"):
+            changes.setdefault(key, None)
     for key, value in changes.items():
-        if value is None and key not in ("space_id", "quantity"):
+        if value is None and key not in ("space_id", "quantity", *PLACEMENT_FIELDS):
             continue
         setattr(row, key, value)
     row.window = min(row.window, len(species.windows(row.method)) - 1)
@@ -746,6 +841,137 @@ def delete_harvest(harvest_id: str, request: Request, session: SessionDep) -> No
     _save(request, session)
 
 
+def _plan_items(session: Session) -> list[PlanItemRow]:
+    query = select(PlanItemRow).order_by(PlanItemRow.sort, PlanItemRow.created_at)
+    return list(session.scalars(query))
+
+
+def _background_dir(request: Request) -> Path:
+    return request.app.state.settings.data_dir / "plan"
+
+
+@api.get("/plan")
+def plan(session: SessionDep, garden: GardenDep) -> dict[str, Any]:
+    """Spaces and objects drawn, background, and where every plant goes."""
+    return plan_out(garden, _plan_items(session))
+
+
+@api.put("/plan")
+def put_plan(
+    body: PlanIn, request: Request, session: SessionDep, garden: GardenDep
+) -> dict[str, Any]:
+    """Change the size of the plan or the scale of its background."""
+    row = garden.row
+    changes = body.model_dump(exclude_unset=True)
+    if "width" in changes or "height" in changes:
+        row.plan_width = changes.get("width")
+        row.plan_height = changes.get("height")
+    if "background_scale" in changes:
+        row.background_scale = changes["background_scale"]
+    if changes.get("background_opacity") is not None:
+        row.background_opacity = changes["background_opacity"]
+    _save(request, session)
+    return plan_out(garden, _plan_items(session))
+
+
+@api.put("/plan/background")
+async def put_background(
+    request: Request,
+    session: SessionDep,
+    garden: GardenDep,
+    width: Annotated[int, Query(gt=0, le=20000)],
+    height: Annotated[int, Query(gt=0, le=20000)],
+) -> dict[str, Any]:
+    """Set the aerial view or drone photo: the image is the body of the request.
+
+    The interface sends the pixel size it read. A new image of the same width
+    keeps the scale, as for a new photo of the same place.
+    """
+    kind = request.headers.get("content-type", "").split(";")[0].strip()
+    if kind not in BACKGROUND_TYPES:
+        raise HTTPException(415, "Send a JPEG, PNG or WebP image")
+    data = await request.body()
+    if not data:
+        raise HTTPException(422, "The image is empty")
+    if len(data) > MAX_BACKGROUND_BYTES:
+        raise HTTPException(413, "The image is too large")
+    folder = _background_dir(request)
+    folder.mkdir(parents=True, exist_ok=True)
+    name = f"background-{secrets.token_hex(6)}.{BACKGROUND_TYPES[kind]}"
+    await asyncio.to_thread((folder / name).write_bytes, data)
+    row = garden.row
+    old = row.background
+    if row.background_width != width:
+        row.background_scale = None
+    row.background, row.background_width, row.background_height = name, width, height
+    _save(request, session)
+    if old:
+        (folder / old).unlink(missing_ok=True)
+    return plan_out(garden, _plan_items(session))
+
+
+@api.delete("/plan/background")
+def delete_background(
+    request: Request, session: SessionDep, garden: GardenDep
+) -> dict[str, Any]:
+    """Remove the background."""
+    row = garden.row
+    old = row.background
+    row.background = row.background_width = row.background_height = None
+    row.background_scale = None
+    _save(request, session)
+    if old:
+        (_background_dir(request) / old).unlink(missing_ok=True)
+    return plan_out(garden, _plan_items(session))
+
+
+@api.get("/plan/background/{name}")
+def background(name: str, request: Request, garden: GardenDep) -> FileResponse:
+    """The background image. Its name changes with it, so it can be cached."""
+    if name != garden.row.background:
+        raise HTTPException(404, "Background not found")
+    return FileResponse(
+        _background_dir(request) / name,
+        headers={"Cache-Control": "max-age=31536000, immutable"},
+    )
+
+
+@api.post("/plan/items", status_code=201)
+def create_item(
+    body: PlanItemIn, request: Request, session: SessionDep
+) -> dict[str, Any]:
+    """Draw an object that is not grown: lawn, path, tree…"""
+    values = body.model_dump(exclude_none=True)
+    missing = [
+        key for key in ("kind", "x", "y", "width", "height") if key not in values
+    ]
+    if missing:
+        raise HTTPException(422, f"{', '.join(missing)} required")
+    row = PlanItemRow(**values)
+    session.add(row)
+    _save(request, session)
+    return item_out(row)
+
+
+@api.patch("/plan/items/{item_id}")
+def update_item(
+    item_id: str, body: PlanItemIn, request: Request, session: SessionDep
+) -> dict[str, Any]:
+    """Move, resize or rename an object."""
+    row = _get(session, PlanItemRow, item_id)
+    for key, value in body.model_dump(exclude_none=True).items():
+        setattr(row, key, value)
+    _save(request, session)
+    return item_out(row)
+
+
+@api.delete("/plan/items/{item_id}", status_code=204)
+def delete_item(item_id: str, request: Request, session: SessionDep) -> None:
+    """Remove an object."""
+    session.delete(_get(session, PlanItemRow, item_id))
+    _save(request, session)
+
+
 @api.get("/tasks")
 def task_list(
     garden: GardenDep,
@@ -839,7 +1065,7 @@ def seasons(session: SessionDep) -> list[dict[str, Any]]:
 
 
 @api.get("/summary")
-def summary(request: Request, garden: GardenDep) -> dict[str, Any]:
+def summary(request: Request, session: SessionDep, garden: GardenDep) -> dict[str, Any]:
     """Everything the companion integration shows, in one request."""
     states = garden.task_states()
     today = garden.clock.today()
@@ -856,6 +1082,7 @@ def summary(request: Request, garden: GardenDep) -> dict[str, Any]:
         "events": garden.calendar(today, today + timedelta(days=SUMMARY_EVENT_DAYS)),
         "sow_now": {row.id: garden.sow_now(row) for row in garden.spaces()},
         "stages": STAGES,
+        "plan": plan_out(garden, _plan_items(session), with_background=False),
     }
 
 
@@ -887,6 +1114,22 @@ async def notices(websocket: WebSocket) -> None:
 
 
 # Application
+
+
+class InterfaceFiles(StaticFiles):
+    """The web interface. Its page is checked again on every visit, so that an
+    update shows at once; the files it loads carry a hash and never change."""
+
+    async def get_response(
+        self, path: str, scope: MutableMapping[str, Any]
+    ) -> Response:
+        """Add caching headers."""
+        response = await super().get_response(path, scope)
+        if getattr(response, "media_type", None) == "text/html":
+            response.headers["Cache-Control"] = "no-cache"
+        elif path.replace("\\", "/").startswith("assets/"):
+            response.headers["Cache-Control"] = "max-age=31536000, immutable"
+        return response
 
 
 def _zone(name: str) -> ZoneInfo:
@@ -973,7 +1216,7 @@ def create_app(
         return response
 
     if (static_dir / "index.html").exists():
-        app.mount("/", StaticFiles(directory=static_dir, html=True), name="ui")
+        app.mount("/", InterfaceFiles(directory=static_dir, html=True), name="ui")
     else:
 
         @app.get("/", include_in_schema=False)

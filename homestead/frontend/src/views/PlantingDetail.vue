@@ -125,7 +125,15 @@ async function logged() {
       <button class="icon" :title="t('close')" @click="router.back()"><Icon name="back" /></button>
       <div class="grow">
         <h1>{{ planting.name }}</h1>
-        <div class="muted">{{ planting.space_name }} · {{ t("season") }} {{ planting.season }}</div>
+        <div class="muted">
+          {{ planting.space_name }} · {{ t("season") }} {{ planting.season }}
+          <template v-if="planting.space_id">
+            ·
+            <RouterLink :to="{ path: `/plan/spaces/${planting.space_id}`, query: { planting: planting.id } }">
+              {{ t("show_on_plan") }}
+            </RouterLink>
+          </template>
+        </div>
       </div>
       <button class="chip" @click="startEdit">{{ t("edit") }}</button>
     </div>

@@ -10,6 +10,7 @@ export class ApiError extends Error {
   }
 }
 
+// `body` is sent as JSON, or as is when it is a Blob (an image).
 export async function api(path, { method = "GET", body, params } = {}) {
   const url = new URL(`api/${path}`, base);
   for (const [key, value] of Object.entries(params || {})) {
@@ -17,11 +18,13 @@ export async function api(path, { method = "GET", body, params } = {}) {
       url.searchParams.set(key, value);
     }
   }
+  const raw = body instanceof Blob;
   const response = await fetch(url, {
     method,
     credentials: "same-origin",
-    headers: body === undefined ? {} : { "Content-Type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    headers:
+      body === undefined ? {} : { "Content-Type": raw ? body.type : "application/json" },
+    body: body === undefined || raw ? body : JSON.stringify(body),
   });
   if (!response.ok) {
     let message = response.statusText;

@@ -214,8 +214,8 @@ Au moment de placer une culture, l'interface signale :
 | Phase | Contenu | Visé pour |
 |---|---|---|
 | ~~0–1~~ | ~~Intégration seule : dates de gel, espaces, cultures, tâches, calendrier (v0.2)~~ | Faites le 27/10/2026 ; le moteur est repris dans l'application |
-| **A. Socle** | Application (serveur, base, interface derrière l'ingress) ; espaces, saisons, cultures, stades, journal, récoltes ; saisie rapide sur smartphone ; intégration compagnon (découverte, tâches, calendrier, stades, capteurs) ; images Docker et dépôt d'applications | Code écrit et testé le 27/10/2026 (v0.3.0) ; reste l'essai dans HA OS, qui demande le dépôt public |
-| **B. Planification** | Plan dessiné, rotation, associations, semis échelonnés, grainothèque, conseils par culture | Avant les semis de février |
+| **A. Socle** | Application (serveur, base, interface derrière l'ingress) ; espaces, saisons, cultures, stades, journal, récoltes ; saisie rapide sur smartphone ; intégration compagnon (découverte, tâches, calendrier, stades, capteurs) ; images Docker et dépôt d'applications | Code écrit et testé le 27/10/2026 (v0.3.0) ; installé dans HA OS le 28/10/2026 |
+| **B. Planification** | Plan dessiné, rotation, associations, semis échelonnés, grainothèque, conseils par culture | Plan dessiné fait le 28/10/2026 (v0.4.0) ; le reste avant les semis de février |
 | **C. Eau et climat** | Bilan hydrique, degrés-jours, sondes, gel, serre, cuve, vannes et blueprints | Mars–avril 2027 |
 | **D. Photos** | Album, timelapse, surface verte, identification, diagnostic par IA, maladies ; maturité en dernier | Printemps 2027 |
 | **E. Verger et vivaces** | Arbres, petits fruits, aromatiques, taille, traitements, floraison et pollinisation, greffes | Été 2027 |
@@ -241,5 +241,13 @@ Avant chaque publication : tests automatisés, puis essai sur une installation H
 - **Interface** : Aujourd'hui (tâches, à lancer maintenant), Cultures par saison et par espace, fiche culture (stades, prévu, tâches, récoltes, journal, saisons précédentes), Saisie rapide, Espaces, Réglages. Français et anglais, thème repris de HA dans l'ingress.
 - **Intégration 0.3.0** : configuration par découverte ou par adresse + jeton, réauthentification ; appareils jardin → espaces → cultures en cours (une culture terminée disparaît) ; liste de tâches, calendrier, stade, capteurs (prochaine tâche, échéance, récolte prévue, récolté en kg, cultures et « à lancer » par espace) ; actions `homestead.log_harvest` et `homestead.log_journal`. 18 tests, hassfest valide.
 - **Essai** : image construite et lancée sur le serveur Debian (port 8099 lié à 127.0.0.1), interface vérifiée sur mobile, client de l'intégration vérifié contre le vrai serveur.
+
+### Phase B, le plan (v0.4.0, 28/10/2026)
+
+- **Plan** : en mètres, sur un fond optionnel (vue aérienne ou photo de drone, réduite à 3000 px dans le navigateur) étalonné en touchant deux points d'une longueur connue. Espaces et objets de décor (pelouse, allée, terrasse, mare, arbre, arbuste, haie, compost, cuve, abri, serre…) déplacés, redimensionnés et tournés au doigt.
+- **Disposition des cultures** : chaque culture reçoit une zone de son espace (sinon les cultures se partagent l'espace en bandes) et une disposition : grille, lignes, quinconce ou libre ; l'espacement vient du catalogue. Au-delà de 1500 plants, la zone est remplie au lieu de dessiner chaque plant.
+- **Aujourd'hui** s'ouvre sur le plan ; toucher un espace montre ses cultures et ses tâches.
+- **Carte de tableau de bord** fournie par l'intégration (`custom:homestead-plan-card`), visible par tous les utilisateurs : saison (selon l'hémisphère), météo réelle (soleil, nuages, pluie, neige, brouillard, orage, vent), nuit ; plantes dessinées par famille, qui grandissent avec le stade et portent leurs fruits à la récolte ; arbres en fleurs, en feuilles, en couleurs ou nus selon la saison. Le plan arrive par la commande WebSocket `homestead/plan/subscribe`.
+- **Plus tard** : récupérer la vue aérienne automatiquement ; sondes du sol sur la carte (phase C).
 
 *Décisions déjà prises : nom Homestead (27/10) ; Plant-it supprimé (27/10) ; jardin = un carré surélevé, une serre avec 2 bacs, un potager d'environ 8 × 4 m (27/10) ; périmètre, architecture et ordre des phases (27/10).*

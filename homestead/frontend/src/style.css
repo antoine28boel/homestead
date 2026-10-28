@@ -150,7 +150,8 @@ button,
   gap: 6px;
 }
 
-button.primary {
+button.primary,
+.button.primary {
   background: var(--hs-primary);
   border-color: var(--hs-primary);
   color: #fff;

@@ -19,6 +19,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from .const import (
+    SHAPE_RECT,
     STAGE_FINISHED,
     STAGE_GROWING,
     STAGE_HARVESTING,
@@ -26,6 +27,7 @@ from .const import (
     STAGE_SOWN,
     STAGE_TRANSPLANTED,
 )
+from .layout import DIRECTION_ACROSS
 
 
 def new_id() -> str:
@@ -74,6 +76,17 @@ class GardenRow(Base):
     """Average last frost of spring, MM-DD."""
     first_frost: Mapped[str] = mapped_column(String(5))
     """Average first frost of autumn, MM-DD."""
+    plan_width: Mapped[float | None] = mapped_column(Float)
+    """Metres; None follows the background or the objects drawn."""
+    plan_height: Mapped[float | None] = mapped_column(Float)
+    background: Mapped[str | None] = mapped_column(String(40))
+    """File name of the aerial view or drone photo, in the data folder."""
+    background_width: Mapped[int | None] = mapped_column(Integer)
+    """Pixels."""
+    background_height: Mapped[int | None] = mapped_column(Integer)
+    background_scale: Mapped[float | None] = mapped_column(Float)
+    """Metres per pixel; None until calibrated."""
+    background_opacity: Mapped[float] = mapped_column(Float, default=0.6)
 
 
 class SpaceRow(Base):
@@ -90,6 +103,36 @@ class SpaceRow(Base):
     """Square metres."""
     sort: Mapped[int] = mapped_column(Integer, default=0)
     archived: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    # On the plan, in metres; None while not drawn. The rectangle turns
+    # around its centre.
+    x: Mapped[float | None] = mapped_column(Float)
+    y: Mapped[float | None] = mapped_column(Float)
+    width: Mapped[float | None] = mapped_column(Float)
+    height: Mapped[float | None] = mapped_column(Float)
+    rotation: Mapped[float] = mapped_column(Float, default=0)
+    shape: Mapped[str] = mapped_column(String(10), default=SHAPE_RECT)
+
+    @property
+    def placed(self) -> bool:
+        """Whether the space is drawn on the plan."""
+        return None not in (self.x, self.y, self.width, self.height)
+
+
+class PlanItemRow(Base):
+    """Something drawn on the plan that is not grown: lawn, path, tree…"""
+
+    __tablename__ = "plan_item"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    kind: Mapped[str] = mapped_column(String(20))
+    label: Mapped[str] = mapped_column(String(100), default="")
+    x: Mapped[float] = mapped_column(Float)
+    y: Mapped[float] = mapped_column(Float)
+    width: Mapped[float] = mapped_column(Float)
+    height: Mapped[float] = mapped_column(Float)
+    rotation: Mapped[float] = mapped_column(Float, default=0)
+    sort: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
 
@@ -126,6 +169,20 @@ class PlantingRow(Base):
     finished_on: Mapped[date | None] = mapped_column(Date)
     notes: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    # Where in its space, in metres from the space's top-left corner; None
+    # means the whole space.
+    layout: Mapped[str | None] = mapped_column(String(12))
+    """None means the default of the space type."""
+    region_x: Mapped[float | None] = mapped_column(Float)
+    region_y: Mapped[float | None] = mapped_column(Float)
+    region_width: Mapped[float | None] = mapped_column(Float)
+    region_height: Mapped[float | None] = mapped_column(Float)
+    spacing: Mapped[float | None] = mapped_column(Float)
+    """Centimetres between plants; None means the species' spacing."""
+    row_spacing: Mapped[float | None] = mapped_column(Float)
+    direction: Mapped[str] = mapped_column(String(1), default=DIRECTION_ACROSS)
+    points: Mapped[str | None] = mapped_column(Text)
+    """Free layout: JSON list of [x, y] in metres, in the region."""
 
     journal: Mapped[list[JournalRow]] = relationship(
         back_populates="planting", cascade="all, delete-orphan", passive_deletes=True

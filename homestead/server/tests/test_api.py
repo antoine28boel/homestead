@@ -355,8 +355,14 @@ def test_static_ui(make_client: Callable[..., TestClient], tmp_path: Path) -> No
     static = tmp_path / "static"
     static.mkdir()
     (static / "index.html").write_text("<h1>Homestead</h1>", encoding="utf-8")
+    (static / "assets").mkdir()
+    (static / "assets" / "index-abc.js").write_text("", encoding="utf-8")
     client = make_client(static_dir=static)
-    assert "Homestead" in client.get("/").text
+    page = client.get("/")
+    assert "Homestead" in page.text
+    # The page is checked on every visit; its hashed files are cached.
+    assert page.headers["cache-control"] == "no-cache"
+    assert "immutable" in client.get("/assets/index-abc.js").headers["cache-control"]
     assert client.get("/api/health").json() == {"status": "ok"}
 
 
