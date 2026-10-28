@@ -6,6 +6,7 @@ import { adoptHomeAssistantTheme } from "./theme.js";
 import { start } from "./store.js";
 import "./style.css";
 
+import Calendar from "./views/Calendar.vue";
 import PlanEditor from "./views/PlanEditor.vue";
 import PlantingDetail from "./views/PlantingDetail.vue";
 import PlantingNew from "./views/PlantingNew.vue";
@@ -24,6 +25,7 @@ const router = createRouter({
     { path: "/plantings", component: Plantings },
     { path: "/plantings/new", component: PlantingNew },
     { path: "/plantings/:id", component: PlantingDetail, props: true },
+    { path: "/calendar", component: Calendar },
     { path: "/log", component: QuickEntry },
     { path: "/spaces", component: Spaces },
     { path: "/plan", component: PlanEditor },

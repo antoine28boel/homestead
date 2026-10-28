@@ -60,6 +60,16 @@ const TEXTS = {
     period_transplant: "Planting out",
     period_harvest: "Harvest",
     tasks: "Tasks",
+    steps: "Steps",
+    steps_ahead: "Steps ahead",
+    step_done_on: "Done on {day}",
+    step_skipped: "Not done",
+    step_dismissed: "Dismissed",
+    schedule_planting: "Schedule",
+    calendar: "Calendar",
+    calendar_help: "Every step of your crops over the next twelve months.",
+    calendar_empty: "Nothing scheduled yet. Schedule a crop to see its steps here.",
+    see_calendar: "See the calendar",
     journal: "Journal",
     harvests: "Harvests",
     harvested: "Harvested",
@@ -244,6 +254,16 @@ const TEXTS = {
     period_transplant: "Mise en place",
     period_harvest: "Récolte",
     tasks: "Tâches",
+    steps: "Étapes",
+    steps_ahead: "Étapes prévues",
+    step_done_on: "Fait le {day}",
+    step_skipped: "Non fait",
+    step_dismissed: "Ignoré",
+    schedule_planting: "Programmer",
+    calendar: "Calendrier",
+    calendar_help: "Toutes les étapes de vos cultures sur les douze prochains mois.",
+    calendar_empty: "Rien de programmé pour l'instant. Programmez une culture pour voir ses étapes ici.",
+    see_calendar: "Voir le calendrier",
     journal: "Journal",
     harvests: "Récoltes",
     harvested: "Récolté",
@@ -396,11 +416,6 @@ export function formatDate(iso, options = { day: "numeric", month: "short" }) {
   return new Intl.DateTimeFormat(language.value, options).format(
     new Date(year, month - 1, day),
   );
-}
-
-export function formatPeriod(period) {
-  if (!period) return "";
-  return `${formatDate(period[0])} – ${formatDate(period[1])}`;
 }
 
 export function formatAmounts(totals) {

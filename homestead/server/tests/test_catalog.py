@@ -60,6 +60,17 @@ def test_methods_and_nursery() -> None:
         {"sow_indoors": [{"start": -8, "end": -6, "ref": "equinox"}]},
         {"sow_indoors": [], "transplant": []},
         {"tasks": [{"id": "x", "after": "sowing", "days": 3, "label": {"fr": "X"}}]},
+        {
+            "tasks": [
+                {
+                    "id": "x",
+                    "after": "sowing",
+                    "days": 3,
+                    "methods": ["sow_in_space"],
+                    "label": {"en": "X"},
+                }
+            ]
+        },
         {"harvest": None},
     ],
 )

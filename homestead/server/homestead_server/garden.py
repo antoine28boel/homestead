@@ -38,8 +38,10 @@ from .orm import (
 )
 from .planner import (
     KIND_CROP,
+    KIND_HARVEST_START,
     KIND_PLANT,
     KIND_SOW_DIRECT,
+    KIND_SOW_INDOORS,
     KIND_TRANSPLANT,
     Planting,
     PlantingState,
@@ -49,6 +51,7 @@ from .planner import (
     next_season,
     open_windows,
     schedule,
+    steps,
     tasks,
     window_period,
 )
@@ -82,6 +85,23 @@ def ensure_garden(session: Session, name: str, latitude: float) -> GardenRow:
         session.add(garden)
         session.commit()
     return garden
+
+
+# Steps drawn as periods in the calendar rather than on their own day.
+PERIOD_KINDS = (
+    KIND_SOW_INDOORS,
+    KIND_SOW_DIRECT,
+    KIND_PLANT,
+    KIND_TRANSPLANT,
+    KIND_HARVEST_START,
+)
+
+STEP_DONE = "done"
+STEP_DISMISSED = "dismissed"
+STEP_OPEN = "open"
+STEP_PLANNED = "planned"
+STEP_SKIPPED = "skipped"
+"""Its moment passed without it being ticked."""
 
 
 def is_generated(uid: str) -> bool:
@@ -204,13 +224,25 @@ class Garden:
 
     def start_options(self, species: Species, space: SpaceRow) -> list[dict[str, Any]]:
         """Each way and window to start a crop in a space, with its next season."""
-        shift = self.space_model(space).frost_shift
+        model = self.space_model(space)
+        shift = model.frost_shift
         today = self.clock.today()
         options = []
         for method in species.methods:
             for index, window in enumerate(species.windows(method)):
                 season = next_season(window, self.climate, shift, today)
                 start, end = window_period(window, self.climate, season, shift)
+                planting = Planting(
+                    id="",
+                    species=species,
+                    variety="",
+                    space=model,
+                    method=method,
+                    window=index,
+                    season=season,
+                )
+                state = PlantingState()
+                plan = schedule(planting, state, self.climate)
                 options.append(
                     {
                         "key": f"{method}:{index}",
@@ -224,6 +256,10 @@ class Garden:
                             start=self.texts.date(start),
                             end=self.texts.date(end),
                         ),
+                        "steps": [
+                            self._step(task, STEP_PLANNED, task.due)
+                            for task in steps(planting, state, plan)
+                        ],
                     }
                 )
         return options
@@ -266,6 +302,74 @@ class Garden:
         if spacing and task.kind in (KIND_SOW_DIRECT, KIND_PLANT, KIND_TRANSPLANT):
             lines.append(self.texts("spacing", plant=spacing[0], row=spacing[1]))
         return "\n".join(lines) or None
+
+    def _label(self, task: Task) -> str:
+        """Name of a step, without the planting."""
+        if task.kind == KIND_CROP:
+            assert task.label
+            return self.texts.label(task.label)
+        return self.texts(f"step_{task.kind}")
+
+    def _step(self, task: Task, status: str, day: date) -> dict[str, Any]:
+        label = self._label(task)
+        upcoming = status in (STEP_OPEN, STEP_PLANNED)
+        return {
+            "key": task.key,
+            "kind": task.kind,
+            "label": label,
+            "day": day.isoformat(),
+            "period": [task.period[0].isoformat(), task.period[1].isoformat()]
+            if task.period and upcoming
+            else None,
+            "status": status,
+            "action": task.action,
+        }
+
+    def _steps(
+        self, row: PlantingRow, states: dict[str, TaskStateRow]
+    ) -> list[tuple[Task, str, date]]:
+        """Steps of a planting with their status and day."""
+        planting = self.planting_model(row)
+        state = self.state(row)
+        plan = schedule(planting, state, self.climate)
+        current = {task.key for task in tasks(planting, state, plan)}
+        stage = STAGES.index(row.stage)
+        sequence = steps(planting, state, plan)
+        # Steps before the last stage reached that were never ticked are past.
+        reached = [
+            index
+            for index, task in enumerate(sequence)
+            if task.action and stage >= STAGES.index(task.action)
+        ]
+        last = reached[-1] if reached else -1
+        result = []
+        for index, task in enumerate(sequence):
+            day = task.due
+            ticked = states.get(f"{row.id}.{task.key}")
+            if ticked is not None:
+                status = ticked.status
+                if status == STEP_DONE and not task.action:
+                    day = ticked.at.date()
+            elif task.action and stage >= STAGES.index(task.action):
+                status = STEP_DONE
+            elif task.key in current:
+                status = STEP_OPEN
+            elif index < last:
+                status = STEP_SKIPPED
+            else:
+                status = STEP_PLANNED
+            result.append((task, status, day))
+        return result
+
+    def planting_steps(
+        self, row: PlantingRow, states: dict[str, TaskStateRow] | None = None
+    ) -> list[dict[str, Any]]:
+        """Every step of a planting, done, open or still to come."""
+        states = self.task_states() if states is None else states
+        return [
+            self._step(task, status, day)
+            for task, status, day in self._steps(row, states)
+        ]
 
     def task_states(self) -> dict[str, TaskStateRow]:
         return {row.uid: row for row in self.session.scalars(select(TaskStateRow))}
@@ -402,9 +506,33 @@ class Garden:
     def calendar(self, start: date, end: date) -> list[dict[str, Any]]:
         """All-day events overlapping [start, end), end exclusive."""
         events = []
+        states = self.task_states()
         for row in self.plantings():
             plan = self.schedule(row)
             name = self.planting_name(row)
+            # The jobs between the periods, each on its own day.
+            for task, status, day in self._steps(row, states):
+                if (
+                    task.kind in PERIOD_KINDS
+                    or status in (STEP_DISMISSED, STEP_SKIPPED)
+                    or not start <= day < end
+                ):
+                    continue
+                summary = self.texts("event_step", label=self._label(task), name=name)
+                events.append(
+                    {
+                        "uid": f"{row.id}.{task.key}",
+                        "summary": f"\u2713 {summary}"
+                        if status == STEP_DONE
+                        else summary,
+                        "start": day.isoformat(),
+                        "end": (day + timedelta(days=1)).isoformat(),
+                        "location": self.space_name(row),
+                        "description": self._description(row, task),
+                        "planting_id": row.id,
+                        "kind": "step",
+                    }
+                )
             for kind, period in (
                 ("sow", plan.sow),
                 ("transplant", plan.transplant),
@@ -422,6 +550,7 @@ class Garden:
                         "start": period[0].isoformat(),
                         "end": event_end.isoformat(),
                         "location": self.space_name(row),
+                        "description": None,
                         "planting_id": row.id,
                         "kind": kind,
                     }

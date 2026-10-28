@@ -10,5 +10,6 @@ germination_days: [6, 12]
 harvest: {after: transplant, days: [60, 85], weeks: 10}
 spacing_cm: {plant: 50, row: 70}
 tasks:
+  - {id: prick_out, after: sowing, days: 21, methods: [sow_indoors], label: {en: Prick out into pots, fr: Repiquer en godets}}
   - {id: stake, after: transplant, days: 7, label: {en: Stake, fr: Tuteurer}}
   - {id: side_shoots, after: transplant, days: 21, label: {en: Remove side shoots, fr: Supprimer les gourmands}}

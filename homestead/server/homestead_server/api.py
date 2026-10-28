@@ -676,6 +676,7 @@ def planting(
         raise HTTPException(404, "Species no longer in the catalogue")
     result = planting_out(garden, row)
     result["tasks"] = garden.planting_tasks(row)
+    result["steps"] = garden.planting_steps(row)
     result["journal"] = [
         journal_out(entry)
         for entry in sorted(row.journal, key=lambda entry: entry.day, reverse=True)
@@ -1037,7 +1038,7 @@ def delete_task(
 
 @api.get("/calendar")
 def calendar(garden: GardenDep, start: date, end: date) -> list[dict[str, Any]]:
-    """Sowing, planting and harvest periods overlapping [start, end)."""
+    """Sowing, planting and harvest periods, and the jobs between them."""
     if end <= start:
         raise HTTPException(422, "end must be after start")
     return garden.calendar(start, end)

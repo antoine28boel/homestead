@@ -250,4 +250,11 @@ Avant chaque publication : tests automatisés, puis essai sur une installation H
 - **Carte de tableau de bord** fournie par l'intégration (`custom:homestead-plan-card`), visible par tous les utilisateurs : saison (selon l'hémisphère), météo réelle (soleil, nuages, pluie, neige, brouillard, orage, vent), nuit ; plantes dessinées par famille, qui grandissent avec le stade et portent leurs fruits à la récolte ; arbres en fleurs, en feuilles, en couleurs ou nus selon la saison. Toucher un espace zoome dessus et liste ses cultures (stade, plants, disposition, prochaine tâche) ; toucher une culture de la liste ouvre son entité (v0.4.2). Le plan arrive par la commande WebSocket `homestead/plan/subscribe`.
 - **Plus tard** : récupérer la vue aérienne automatiquement ; sondes du sol sur la carte (phase C).
 
+### Phase B, les étapes de chaque culture (v0.5.0, 28/10/2026)
+
+- **Programmer une culture** : en choisissant la culture, l'espace et la façon de la lancer, l'application montre les étapes prévues avant de confirmer.
+- **Étapes** : semis (sous abri ou en place) ou plantation, repiquage en godets (catalogue, seulement pour les semis sous abri), endurcissement une semaine avant la mise en place (sauf en serre), mise en place, travaux du catalogue (tuteurer, gourmands, éclaircir, butter, pincer…), récolte, fin de récolte. Dates estimées depuis les gelées, puis recalculées dès qu'une date réelle est saisie. Statuts : fait, à faire, prévu, passé (non coché), ignoré.
+- **Calendrier** : page de l'application (12 mois, par mois) ; dans HA, les travaux s'ajoutent aux périodes, un jour chacun, avec description ; ceux qui sont faits sont marqués ✓.
+- Les travaux de pépinière (repiquage) disparaissent de la liste de tâches une fois la culture mise en place.
+
 *Décisions déjà prises : nom Homestead (27/10) ; Plant-it supprimé (27/10) ; jardin = un carré surélevé, une serre avec 2 bacs, un potager d'environ 8 × 4 m (27/10) ; périmètre, architecture et ordre des phases (27/10).*

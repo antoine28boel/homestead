@@ -6,8 +6,9 @@ import { api, ApiError } from "../api.js";
 import Icon from "../components/Icon.vue";
 import LogForm from "../components/LogForm.vue";
 import Sheet from "../components/Sheet.vue";
+import StepList from "../components/StepList.vue";
 import TaskRow from "../components/TaskRow.vue";
-import { formatAmounts, formatDate, formatPeriod, t } from "../i18n.js";
+import { formatAmounts, formatDate, t } from "../i18n.js";
 import { failed, store, toast, today } from "../store.js";
 
 const props = defineProps({ id: { type: String, required: true } });
@@ -43,12 +44,6 @@ const stages = computed(() => {
       current: stage === planting.value?.stage,
     }));
 });
-
-const periods = computed(() =>
-  ["sow", "transplant", "harvest"]
-    .map((key) => ({ key, period: planting.value?.schedule[key] }))
-    .filter((item) => item.period),
-);
 
 function openStage(stage) {
   stageSheet.value = stage;
@@ -157,14 +152,12 @@ async function logged() {
       </button>
     </div>
 
-    <h2>{{ t("schedule") }}</h2>
+    <h2>
+      {{ t("steps") }}
+      <RouterLink to="/calendar" class="muted aside">{{ t("calendar") }}</RouterLink>
+    </h2>
     <div class="card">
-      <dl class="periods">
-        <template v-for="item in periods" :key="item.key">
-          <dt>{{ t(`period_${item.key}`) }}</dt>
-          <dd>{{ formatPeriod(item.period) }}</dd>
-        </template>
-      </dl>
+      <StepList :steps="planting.steps" />
       <p v-if="planting.notes" class="muted notes">{{ planting.notes }}</p>
     </div>
 
@@ -284,6 +277,12 @@ async function logged() {
 .notes {
   white-space: pre-line;
   margin: 12px 0 0;
+}
+
+.aside {
+  float: right;
+  font-size: 0.85rem;
+  font-weight: 400;
 }
 
 .bottom {

@@ -89,6 +89,11 @@ def test_starts_and_sow_now(client: TestClient, spaces: dict[str, str]) -> None:
     assert "du" in options[0]["label"]
     sow = next(option for option in options if option["method"] == "sow_indoors")
     assert sow["season"] == 2028
+    # Each option shows the steps it leads to.
+    assert [step["key"] for step in sow["steps"]][:2] == ["sow", "task.prick_out"]
+    assert sow["steps"][0]["label"] == "Semer sous abri"
+    assert sow["steps"][0]["period"][0] == sow["start"]
+    assert {step["status"] for step in sow["steps"]} == {"planned"}
 
     # Tomatoes for the greenhouse were sown in February; for open ground, now.
     now = client.get(f"/api/spaces/{spaces['plot']}/sow-now").json()
@@ -141,6 +146,40 @@ def test_planting_lifecycle(
     assert response.json()["dates"] == {"sown": "2027-03-20"}
     bad = client.post(f"/api/plantings/{tomato['id']}/stage", json={"stage": "eaten"})
     assert bad.status_code == 422
+
+
+def test_planting_steps(client: TestClient, spaces: dict[str, str]) -> None:
+    """Steps are done, open, planned, or past without being ticked."""
+    tomato = _plant(client, "tomato", spaces["plot"])
+    url = f"/api/plantings/{tomato['id']}"
+
+    def status() -> dict[str, str]:
+        return {step["key"]: step["status"] for step in client.get(url).json()["steps"]}
+
+    assert status()["sow"] == "open"
+    assert set(list(status().values())[1:]) == {"planned"}
+
+    client.post(f"{url}/stage", json={"stage": "sown", "day": "2027-03-20"})
+    assert status()["sow"] == "done"
+    assert status()["task.prick_out"] == "open"
+    assert status()["transplant"] == "open"
+    assert status()["task.stake"] == "planned"
+
+    client.patch(f"/api/tasks/{tomato['id']}.task.prick_out", json={"completed": True})
+    client.post(f"{url}/stage", json={"stage": "transplanted", "day": "2027-05-20"})
+    steps = {step["key"]: step for step in client.get(url).json()["steps"]}
+    assert steps["task.prick_out"]["status"] == "done"
+    assert steps["task.prick_out"]["day"] == "2027-03-20"
+    assert steps["harden_off"]["status"] == "skipped"
+    assert steps["task.stake"] == {
+        "key": "task.stake",
+        "kind": "crop",
+        "label": "Tuteurer",
+        "day": "2027-05-27",
+        "period": None,
+        "status": "open",
+        "action": None,
+    }
 
 
 def test_dismiss_task(client: TestClient, spaces: dict[str, str]) -> None:
@@ -264,7 +303,31 @@ def test_calendar(client: TestClient, spaces: dict[str, str]) -> None:
         "/api/calendar", params={"start": "2027-01-01", "end": "2028-01-01"}
     ).json()
     kinds = {event["kind"] for event in events if event["planting_id"] == tomato["id"]}
-    assert kinds == {"sow", "transplant", "harvest"}
+    assert kinds == {"sow", "transplant", "harvest", "step"}
+    # The jobs between the periods are on their own day.
+    jobs = {event["uid"]: event for event in events if event["kind"] == "step"}
+    stake = jobs[f"{tomato['id']}.task.stake"]
+    assert stake["summary"] == "Tuteurer : Tomate"
+    assert stake["location"] == "Potager"
+    assert (stake["start"], stake["end"]) == ("2027-05-29", "2027-05-30")
+    assert {uid.split(".", 1)[1] for uid in jobs} == {
+        "task.prick_out",
+        "harden_off",
+        "task.stake",
+        "task.side_shoots",
+        "finish",
+    }
+    # Ticked jobs stay, marked; dismissed ones go.
+    client.patch(f"/api/tasks/{tomato['id']}.sow", json={"completed": True})
+    client.patch(f"/api/tasks/{tomato['id']}.task.prick_out", json={"completed": True})
+    client.delete(f"/api/tasks/{tomato['id']}.harden_off")
+    events = client.get(
+        "/api/calendar", params={"start": "2027-01-01", "end": "2028-01-01"}
+    ).json()
+    jobs = {event["uid"]: event for event in events if event["kind"] == "step"}
+    assert jobs[f"{tomato['id']}.task.prick_out"]["summary"].startswith("\u2713 ")
+    assert jobs[f"{tomato['id']}.task.prick_out"]["start"] == "2027-03-20"
+    assert f"{tomato['id']}.harden_off" not in jobs
     harvest = next(event for event in events if event["kind"] == "harvest")
     assert harvest["end"] == _next_day(tomato["schedule"]["harvest"][1])
     assert harvest["location"] == "Potager"

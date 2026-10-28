@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { api } from "../api.js";
+import StepList from "../components/StepList.vue";
 import { t } from "../i18n.js";
 import { failed, store } from "../store.js";
 
@@ -24,6 +25,7 @@ const matches = computed(() => {
   return store.catalog.filter((item) => !query || item.name.toLocaleLowerCase().includes(query));
 });
 const chosen = computed(() => store.catalog.find((item) => item.id === species.value));
+const option = computed(() => options.value.find((item) => item.key === start.value));
 
 watch(
   [species, spaceId],
@@ -124,6 +126,13 @@ async function create() {
         </div>
       </div>
 
+      <div v-if="option" class="field">
+        <span class="muted">{{ t("steps_ahead") }}</span>
+        <div class="card">
+          <StepList :steps="option.steps" />
+        </div>
+      </div>
+
       <label class="field">
         <span>{{ t("variety") }}</span>
         <input v-model="variety" maxlength="100" />
@@ -139,7 +148,7 @@ async function create() {
       <div class="actions">
         <button type="button" @click="router.back()">{{ t("cancel") }}</button>
         <button class="primary" type="submit" :disabled="saving || !start">
-          {{ t("create") }}
+          {{ t("schedule_planting") }}
         </button>
       </div>
     </template>

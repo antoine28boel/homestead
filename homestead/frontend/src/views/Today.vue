@@ -120,6 +120,7 @@ async function addItem() {
         <TaskRow v-for="task in groups[key]" :key="task.uid" :task="task" @changed="load" />
       </template>
       <div v-if="!open" class="empty">{{ t("nothing_to_do") }}</div>
+      <RouterLink to="/calendar" class="list-item muted">{{ t("see_calendar") }}</RouterLink>
       <form class="list-item" @submit.prevent="addItem">
         <input v-model="newItem" :placeholder="t('new_item')" maxlength="255" />
         <button type="submit" :disabled="!newItem.trim()">{{ t("add") }}</button>

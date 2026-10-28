@@ -15,6 +15,7 @@ from .const import (
     METHOD_PLANT,
     METHOD_SOW_DIRECT,
     METHOD_SOW_INDOORS,
+    METHODS,
     REF_FIRST_FROST,
     REF_LAST_FROST,
 )
@@ -59,6 +60,12 @@ class CropTask:
     after: str
     days: int
     label: dict[str, str]
+    methods: tuple[str, ...] = ()
+    """Ways of starting the crop this job applies to; all when empty."""
+
+    def applies(self, method: str) -> bool:
+        """Whether this job is done for a crop started this way."""
+        return not self.methods or method in self.methods
 
 
 @dataclass(frozen=True, slots=True)
@@ -144,6 +151,13 @@ def _after(value: Any, field: str) -> str:
     return value
 
 
+def _methods(raw: Any, field: str) -> tuple[str, ...]:
+    methods = tuple(raw or ())
+    if any(method not in METHODS for method in methods):
+        raise CatalogError(f"{field}: unknown method in {list(methods)}")
+    return methods
+
+
 def parse_species(raw: dict[str, Any]) -> Species:
     """Build a species from the content of its YAML file."""
     try:
@@ -180,6 +194,7 @@ def parse_species(raw: dict[str, Any]) -> Species:
                     after=_after(task["after"], f"tasks.{task['id']}"),
                     days=int(task["days"]),
                     label=dict(task["label"]),
+                    methods=_methods(task.get("methods"), f"tasks.{task['id']}"),
                 )
                 for task in raw.get("tasks") or []
             ),

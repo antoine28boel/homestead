@@ -10,4 +10,5 @@ germination_days: [5, 10]
 harvest: {after: transplant, days: [70, 120], weeks: 6}
 spacing_cm: {plant: 50, row: 60}
 tasks:
+  - {id: prick_out, after: sowing, days: 21, methods: [sow_indoors], label: {en: Prick out into pots, fr: Repiquer en godets}}
   - {id: net, after: transplant, days: 0, label: {en: Cover with insect netting, fr: Protéger avec un filet anti-insectes}}

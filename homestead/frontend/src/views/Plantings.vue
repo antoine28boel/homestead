@@ -58,6 +58,7 @@ const bySpace = computed(() => {
     <button class="chip" :class="{ selected: activeOnly }" @click="activeOnly = true">
       {{ t("active_only") }}
     </button>
+    <RouterLink to="/calendar" class="button chip calendar">{{ t("calendar") }}</RouterLink>
   </div>
 
   <p v-if="plantings === null" class="muted">{{ t("loading") }}</p>
@@ -95,6 +96,10 @@ const bySpace = computed(() => {
 
 .season {
   width: auto;
+}
+
+.calendar {
+  margin-left: auto;
 }
 
 .button.primary {

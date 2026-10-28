@@ -16,6 +16,7 @@ from homestead_server.planner import (
     open_windows,
     schedule,
     season_frosts,
+    steps,
     tasks,
     window_period,
 )
@@ -130,8 +131,13 @@ def test_tasks_through_the_season(catalog: dict[str, Species]) -> None:
 
     assert keys(PlantingState()) == {"sow": (date(2027, 3, 20), "sown")}
 
+    # In the nursery: prick out, then harden off a week before planting out.
     sown = PlantingState("sown", {"sown": date(2027, 3, 22)})
-    assert keys(sown) == {"transplant": (date(2027, 5, 22), "transplanted")}
+    assert keys(sown) == {
+        "task.prick_out": (date(2027, 4, 12), None),
+        "harden_off": (date(2027, 5, 15), None),
+        "transplant": (date(2027, 5, 22), "transplanted"),
+    }
 
     transplanted = PlantingState(
         "transplanted", {"sown": date(2027, 3, 22), "transplanted": date(2027, 5, 25)}
@@ -165,6 +171,64 @@ def test_tasks_direct_sowing(catalog: dict[str, Species]) -> None:
         "task.thin",
         "harvest",
     }
+
+
+def test_steps_from_sowing_to_harvest(catalog: dict[str, Species]) -> None:
+    """A planned tomato has every step ahead, in order."""
+    planting = _planting(catalog, "tomato", "sow_indoors")
+
+    def dated(state: PlantingState) -> list[tuple[str, date]]:
+        plan = schedule(planting, state, BELGIUM)
+        return [(task.key, task.due) for task in steps(planting, state, plan)]
+
+    assert dated(PlantingState()) == [
+        ("sow", date(2027, 3, 20)),
+        ("task.prick_out", date(2027, 4, 10)),
+        ("harden_off", date(2027, 5, 15)),
+        ("transplant", date(2027, 5, 22)),
+        ("task.stake", date(2027, 5, 29)),
+        ("task.side_shoots", date(2027, 6, 12)),
+        ("harvest", date(2027, 7, 21)),
+        ("finish", date(2027, 10, 24)),
+    ]
+    # Actual dates move the steps that follow them.
+    late = PlantingState(
+        "transplanted", {"sown": date(2027, 3, 25), "transplanted": date(2027, 6, 1)}
+    )
+    moved = dict(dated(late))
+    assert moved["sow"] == date(2027, 3, 25)
+    assert moved["task.prick_out"] == date(2027, 4, 15)
+    assert moved["harden_off"] == date(2027, 5, 25)
+    assert moved["task.stake"] == date(2027, 6, 8)
+
+
+def test_steps_depend_on_the_way_of_starting(catalog: dict[str, Species]) -> None:
+    """No hardening off in a greenhouse, no nursery for bought plants."""
+
+    def keys(planting: Planting) -> list[str]:
+        state = PlantingState()
+        plan = schedule(planting, state, BELGIUM)
+        return [task.key for task in steps(planting, state, plan)]
+
+    sheltered = _planting(catalog, "tomato", "sow_indoors", space=GREENHOUSE)
+    assert "harden_off" not in keys(sheltered)
+    assert "task.prick_out" in keys(sheltered)
+    assert keys(_planting(catalog, "lettuce", "plant")) == [
+        "plant",
+        "harvest",
+        "finish",
+    ]
+    assert keys(_planting(catalog, "lettuce", "sow_direct")) == [
+        "sow",
+        "harvest",
+        "finish",
+    ]
+    assert keys(_planting(catalog, "carrot", "sow_direct")) == [
+        "sow",
+        "task.thin",
+        "harvest",
+        "finish",
+    ]
 
 
 def test_open_windows(catalog: dict[str, Species]) -> None:

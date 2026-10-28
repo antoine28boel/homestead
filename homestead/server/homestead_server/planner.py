@@ -13,6 +13,7 @@ from .const import (
     METHOD_SOW_DIRECT,
     METHOD_SOW_INDOORS,
     REF_FIRST_FROST,
+    SPACE_GREENHOUSE,
     STAGE_FINISHED,
     STAGE_GROWING,
     STAGE_HARVESTING,
@@ -30,9 +31,13 @@ KIND_SOW_INDOORS = "sow_indoors"
 KIND_SOW_DIRECT = "sow_direct"
 KIND_PLANT = "plant"
 KIND_TRANSPLANT = "transplant"
+KIND_HARDEN_OFF = "harden_off"
 KIND_HARVEST_START = "harvest_start"
 KIND_HARVEST_END = "harvest_end"
 KIND_CROP = "crop"
+
+# Seedlings get used to the open air for about a week before planting out.
+HARDEN_OFF_DAYS = 7
 
 
 @dataclass(frozen=True, slots=True)
@@ -178,6 +183,43 @@ def _reached(state: PlantingState, stage: str) -> bool:
     return STAGES.index(state.stage) >= STAGES.index(stage)
 
 
+def _hardened(planting: Planting) -> bool:
+    """Whether seedlings raised under cover go out into the open air."""
+    return planting.method == METHOD_SOW_INDOORS and not (
+        planting.space and planting.space.type == SPACE_GREENHOUSE
+    )
+
+
+def _harden_off(transplant: Period) -> Task:
+    return Task(
+        "harden_off",
+        KIND_HARDEN_OFF,
+        transplant[0] - timedelta(days=HARDEN_OFF_DAYS),
+    )
+
+
+def _crop_tasks(
+    planting: Planting,
+    sown: date | None,
+    transplanted: date | None,
+    nursery: bool = True,
+) -> list[Task]:
+    """Catalogue jobs; those done under cover only while the plants are there."""
+    refs = {AFTER_SOWING: sown, AFTER_TRANSPLANT: transplanted}
+    return [
+        Task(
+            f"task.{crop_task.id}",
+            KIND_CROP,
+            ref + timedelta(days=crop_task.days),
+            label=crop_task.label,
+        )
+        for crop_task in planting.species.tasks
+        if crop_task.applies(planting.method)
+        and (nursery or crop_task.methods != (METHOD_SOW_INDOORS,))
+        and (ref := refs[crop_task.after]) is not None
+    ]
+
+
 def tasks(planting: Planting, state: PlantingState, plan: Schedule) -> list[Task]:
     """Every task of a planting at its current stage, done or not."""
     if state.stage == STAGE_FINISHED:
@@ -207,6 +249,8 @@ def tasks(planting: Planting, state: PlantingState, plan: Schedule) -> list[Task
         state, STAGE_TRANSPLANTED
     )
     if waiting_transplant and plan.transplant:
+        if _hardened(planting):
+            result.append(_harden_off(plan.transplant))
         result.append(
             Task(
                 "transplant",
@@ -217,20 +261,14 @@ def tasks(planting: Planting, state: PlantingState, plan: Schedule) -> list[Task
             )
         )
 
-    refs = {
-        AFTER_SOWING: state.dates.get(STAGE_SOWN),
-        AFTER_TRANSPLANT: state.dates.get(STAGE_TRANSPLANTED),
-    }
-    for crop_task in planting.species.tasks:
-        if (ref := refs[crop_task.after]) is not None:
-            result.append(
-                Task(
-                    f"task.{crop_task.id}",
-                    KIND_CROP,
-                    ref + timedelta(days=crop_task.days),
-                    label=crop_task.label,
-                )
-            )
+    result.extend(
+        _crop_tasks(
+            planting,
+            state.dates.get(STAGE_SOWN),
+            state.dates.get(STAGE_TRANSPLANTED),
+            nursery=waiting_transplant,
+        )
+    )
 
     if state.stage == STAGE_HARVESTING:
         result.append(Task("finish", KIND_HARVEST_END, plan.harvest[1], STAGE_FINISHED))
@@ -249,6 +287,72 @@ def tasks(planting: Planting, state: PlantingState, plan: Schedule) -> list[Task
             )
         )
     return result
+
+
+def steps(planting: Planting, state: PlantingState, plan: Schedule) -> list[Task]:
+    """Every step of a planting from start to finish, in order.
+
+    Steps already taken are dated from what happened; the next ones from the
+    schedule, so they move as soon as an actual date is recorded. They have
+    the keys of the tasks they become.
+    """
+    method = planting.method
+    sown = state.dates.get(STAGE_SOWN) or (plan.sow[0] if plan.sow else None)
+    transplanted = state.dates.get(STAGE_TRANSPLANTED) or (
+        plan.transplant[0] if plan.transplant else None
+    )
+    result: list[Task] = []
+    if method == METHOD_PLANT:
+        assert plan.transplant and transplanted
+        result.append(
+            Task(
+                "plant",
+                KIND_PLANT,
+                transplanted,
+                STAGE_TRANSPLANTED,
+                period=plan.transplant,
+            )
+        )
+    else:
+        assert plan.sow and sown
+        kind = KIND_SOW_INDOORS if method == METHOD_SOW_INDOORS else KIND_SOW_DIRECT
+        result.append(Task("sow", kind, sown, STAGE_SOWN, period=plan.sow))
+    if method == METHOD_SOW_INDOORS and plan.transplant and transplanted:
+        if _hardened(planting):
+            result.append(_harden_off((transplanted, transplanted)))
+        result.append(
+            Task(
+                "transplant",
+                KIND_TRANSPLANT,
+                transplanted,
+                STAGE_TRANSPLANTED,
+                period=plan.transplant,
+            )
+        )
+    if method == METHOD_SOW_DIRECT:
+        transplanted = None
+    elif method == METHOD_PLANT:
+        sown = None
+    result.extend(_crop_tasks(planting, sown, transplanted))
+    result.append(
+        Task(
+            "harvest",
+            KIND_HARVEST_START,
+            plan.harvest[0],
+            STAGE_HARVESTING,
+            period=plan.harvest,
+        )
+    )
+    result.append(
+        Task(
+            "finish",
+            KIND_HARVEST_END,
+            state.dates.get(STAGE_FINISHED) or plan.harvest[1],
+            STAGE_FINISHED,
+        )
+    )
+    # Stable: steps on the same day keep their natural order.
+    return sorted(result, key=lambda task: task.due)
 
 
 def open_windows(

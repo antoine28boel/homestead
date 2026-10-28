@@ -1,4 +1,4 @@
-"""Calendar of sowing, planting-out and harvest periods."""
+"""Calendar of sowing, planting-out and harvest periods, and the jobs between."""
 
 from __future__ import annotations
 
@@ -33,12 +33,13 @@ def _event(event: dict[str, Any]) -> CalendarEvent:
         end=date.fromisoformat(event["end"]),
         summary=event["summary"],
         location=event["location"],
+        description=event.get("description"),
         uid=event["uid"],
     )
 
 
 class GardenCalendar(HomesteadEntity, CalendarEntity):
-    """All-day events, one per period of each planting."""
+    """All-day events: the periods of each planting and its other steps."""
 
     def __init__(self, coordinator: HomesteadCoordinator) -> None:
         """Attach to the garden device."""

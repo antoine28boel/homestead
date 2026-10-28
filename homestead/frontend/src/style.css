@@ -330,21 +330,6 @@ input[type="checkbox"] {
   flex-wrap: wrap;
 }
 
-dl.periods {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 4px 16px;
-  margin: 0;
-}
-
-dl.periods dt {
-  color: var(--hs-text-muted);
-}
-
-dl.periods dd {
-  margin: 0;
-}
-
 .stages {
   display: flex;
   gap: 4px;
