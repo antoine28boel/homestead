@@ -39,6 +39,23 @@ TEXTS: dict[str, dict[str, str]] = {
         "choice_sow_indoors": "Sow under cover, {start} – {end}",
         "choice_sow_direct": "Sow in place, {start} – {end}",
         "choice_plant": "Plant out, {start} – {end}",
+        "note_rotation": (
+            "Same family ({family}) here in {season}: {name}. "
+            "Leave {years} years between them."
+        ),
+        "note_avoid": "Bad neighbour close by: {name}.",
+        "note_companion": "Good neighbour: {name}.",
+        "family_amaranthaceae": "beet family",
+        "family_amaryllidaceae": "alliums",
+        "family_apiaceae": "carrot family",
+        "family_asteraceae": "daisy family",
+        "family_brassicaceae": "brassicas",
+        "family_caprifoliaceae": "valerian family",
+        "family_cucurbitaceae": "cucurbits",
+        "family_fabaceae": "legumes",
+        "family_lamiaceae": "mint family",
+        "family_poaceae": "grasses",
+        "family_solanaceae": "nightshades",
         "no_space": "?",
         "date": "%Y-%m-%d",
         "decimal": ".",
@@ -71,6 +88,23 @@ TEXTS: dict[str, dict[str, str]] = {
         "choice_sow_indoors": "Semis sous abri, du {start} au {end}",
         "choice_sow_direct": "Semis en place, du {start} au {end}",
         "choice_plant": "Plantation, du {start} au {end}",
+        "note_rotation": (
+            "Même famille ({family}) ici en {season} : {name}. "
+            "Laisser {years} ans entre les deux."
+        ),
+        "note_avoid": "Mauvais voisin à proximité : {name}.",
+        "note_companion": "Bon voisin : {name}.",
+        "family_amaranthaceae": "amarantacées",
+        "family_amaryllidaceae": "alliacées",
+        "family_apiaceae": "ombellifères",
+        "family_asteraceae": "astéracées",
+        "family_brassicaceae": "crucifères",
+        "family_caprifoliaceae": "valérianacées",
+        "family_cucurbitaceae": "cucurbitacées",
+        "family_fabaceae": "légumineuses",
+        "family_lamiaceae": "lamiacées",
+        "family_poaceae": "graminées",
+        "family_solanaceae": "solanacées",
         "no_space": "?",
         "date": "%d/%m/%Y",
         "decimal": ",",
@@ -99,6 +133,10 @@ class Texts:
         """A temperature to the tenth of a degree, without trailing zero."""
         text = f"{round(value, 1):g}".replace(".", self._texts["decimal"])
         return text.replace("-", "\u2212")
+
+    def family(self, family: str) -> str:
+        """Common name of a botanical family, or the family itself."""
+        return self._texts.get(f"family_{family}", family)
 
     def label(self, label: dict[str, str]) -> str:
         """Label of a catalogue task."""

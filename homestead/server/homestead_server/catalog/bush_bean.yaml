@@ -9,3 +9,13 @@ harvest: {after: sowing, days: [55, 70], weeks: 4}
 spacing_cm: {plant: 10, row: 40}
 tasks:
   - {id: earth_up, after: sowing, days: 21, label: {en: Earth up, fr: Butter}}
+rotation_years: 3
+companions: [carrot, cucumber, potato, sweet_corn]
+avoid: [garlic, leek, onion, shallot]
+tips:
+  en:
+    - "Sow in warm soil (above 12 °C): seeds rot in cold ground."
+    - "Pick every two or three days to keep the pods coming."
+  fr:
+    - "Semer en terre réchauffée (plus de 12 °C) : les graines pourrissent dans le froid."
+    - "Cueillir tous les deux ou trois jours pour que la production continue."

@@ -13,3 +13,13 @@ harvest: {after: sowing, days: [50, 65], weeks: 10}
 spacing_cm: {plant: 80, row: 100}
 tasks:
   - {id: mulch, after: transplant, days: 14, label: {en: Mulch, fr: Pailler}}
+rotation_years: 3
+companions: [bush_bean, pole_bean, sweet_corn]
+avoid: [potato]
+tips:
+  en:
+    - "One or two plants are enough for a family."
+    - "Pick at 15 to 20 cm, every two or three days."
+  fr:
+    - "Un ou deux pieds suffisent pour une famille."
+    - "Cueillir à 15 ou 20 cm, tous les deux ou trois jours."

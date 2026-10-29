@@ -10,3 +10,12 @@ harvest: {after: sowing, days: [45, 70], weeks: 6}
 spacing_cm: {plant: 10, row: 30}
 tasks:
   - {id: thin, after: sowing, days: 20, label: {en: Thin out, fr: Éclaircir}}
+rotation_years: 4
+companions: [onion, pea]
+tips:
+  en:
+    - "Water regularly: in dry soil they turn hollow and hot."
+    - "Cover with fine netting against flea beetles."
+  fr:
+    - "Arroser régulièrement : en terre sèche, ils deviennent creux et piquants."
+    - "Couvrir d'un voile fin contre les altises."

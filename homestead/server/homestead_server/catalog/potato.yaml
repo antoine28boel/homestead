@@ -9,3 +9,13 @@ spacing_cm: {plant: 35, row: 70}
 tasks:
   - {id: earth_up, after: transplant, days: 21, label: {en: Earth up, fr: Butter}}
   - {id: earth_up_again, after: transplant, days: 42, label: {en: Earth up again, fr: Butter à nouveau}}
+rotation_years: 4
+companions: [broad_bean, bush_bean, cabbage]
+avoid: [cucumber, squash, tomato]
+tips:
+  en:
+    - "Sprout the seed potatoes in the light for a month before planting."
+    - "Earth up when the stems reach 20 cm; watch for blight in warm, wet weather."
+  fr:
+    - "Faire germer les plants à la lumière un mois avant la plantation."
+    - "Butter quand les tiges atteignent 20 cm ; surveiller le mildiou par temps chaud et humide."

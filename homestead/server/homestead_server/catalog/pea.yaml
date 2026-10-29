@@ -9,3 +9,13 @@ harvest: {after: sowing, days: [70, 90], weeks: 4}
 spacing_cm: {plant: 5, row: 40}
 tasks:
   - {id: support, after: sowing, days: 14, label: {en: Put up supports, fr: Ramer}}
+rotation_years: 4
+companions: [carrot, cucumber, lettuce, radish, turnip]
+avoid: [garlic, leek, onion, shallot]
+tips:
+  en:
+    - "Give climbing kinds twigs or netting as soon as they come up."
+    - "Pick often and young: older peas turn starchy."
+  fr:
+    - "Donner des rames ou un filet aux variétés grimpantes dès la levée."
+    - "Cueillir souvent et jeune : les pois trop vieux deviennent farineux."

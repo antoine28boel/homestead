@@ -6,3 +6,13 @@ transplant:
   - {start: -6, end: -2}
 harvest: {after: transplant, days: [100, 130], weeks: 3}
 spacing_cm: {plant: 10, row: 25}
+rotation_years: 3
+companions: [beetroot, cabbage, carrot, lettuce]
+avoid: [broad_bean, bush_bean, pea, pole_bean]
+tips:
+  en:
+    - "Plant the sets with the tip just showing; firm back those the birds pull out."
+    - "Lift when the leaves fall over, and dry them in the sun before storing."
+  fr:
+    - "Planter les bulbilles la pointe affleurante ; replacer celles que les oiseaux arrachent."
+    - "Arracher quand les feuilles se couchent, et les faire sécher au soleil avant de les ranger."

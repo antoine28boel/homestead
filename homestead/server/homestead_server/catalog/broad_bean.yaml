@@ -9,3 +9,13 @@ harvest: {after: sowing, days: [90, 110], weeks: 4}
 spacing_cm: {plant: 15, row: 45}
 tasks:
   - {id: pinch, after: sowing, days: 60, label: {en: Pinch out the tips, fr: Pincer les extrémités}}
+rotation_years: 3
+companions: [lettuce, potato, spinach]
+avoid: [garlic, leek, onion, shallot]
+tips:
+  en:
+    - "Pinch out the tops once the first pods set, against black aphids."
+    - "After harvest, cut the stems at ground level: the roots leave nitrogen in the soil."
+  fr:
+    - "Pincer les têtes dès les premières gousses, contre les pucerons noirs."
+    - "Après la récolte, couper les tiges au ras du sol : les racines laissent de l'azote dans la terre."

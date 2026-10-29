@@ -11,3 +11,12 @@ transplant:
 germination_days: [14, 28]
 harvest: {after: sowing, days: [70, 90], weeks: 30}
 spacing_cm: {plant: 15, row: 25}
+rotation_years: 3
+companions: [tomato]
+tips:
+  en:
+    - "Slow to come up: soak the seeds overnight before sowing."
+    - "Cut the outer stems; it lasts two seasons and goes to seed in the second."
+  fr:
+    - "Lent à lever : faire tremper les graines une nuit avant de semer."
+    - "Couper les tiges extérieures ; il vit deux saisons et monte en graine la deuxième."

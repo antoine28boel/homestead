@@ -9,3 +9,13 @@ harvest: {after: sowing, days: [65, 80], weeks: 8}
 spacing_cm: {plant: 15, row: 60}
 tasks:
   - {id: support, after: sowing, days: 7, label: {en: Put up the poles, fr: Installer les rames}}
+rotation_years: 3
+companions: [cucumber, squash, sweet_corn]
+avoid: [garlic, leek, onion, shallot]
+tips:
+  en:
+    - "Set up the poles before sowing: 2 m wigwams or rows."
+    - "Pick every two or three days to keep the pods coming."
+  fr:
+    - "Installer les rames avant de semer : tipis ou rangées de 2 m."
+    - "Cueillir tous les deux ou trois jours pour que la production continue."

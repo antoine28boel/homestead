@@ -9,3 +9,12 @@ harvest: {after: sowing, days: [70, 110], weeks: 8}
 spacing_cm: {plant: 3, row: 25}
 tasks:
   - {id: thin, after: sowing, days: 30, label: {en: Thin out, fr: Éclaircir}}
+rotation_years: 3
+companions: [leek, lettuce, onion, radish, shallot]
+tips:
+  en:
+    - "Sow thinly in fine soil free of stones, or the roots fork."
+    - "Thin in the evening and firm the soil: the smell of crushed leaves draws the carrot fly."
+  fr:
+    - "Semer clair dans une terre fine et sans cailloux, sinon les racines fourchent."
+    - "Éclaircir le soir et tasser la terre : l'odeur des feuilles froissées attire la mouche de la carotte."

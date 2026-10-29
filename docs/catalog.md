@@ -1,6 +1,6 @@
 # The species catalogue
 
-Each crop is a YAML file in [`custom_components/homestead/catalog/`](../custom_components/homestead/catalog/), named after its `id`. Contributions are welcome: add a species, fix a value, translate the names.
+Each crop is a YAML file in [`homestead/server/homestead_server/catalog/`](../homestead/server/homestead_server/catalog/), named after its `id`. Contributions are welcome: add a species, fix a value, translate the names.
 
 ```yaml
 id: tomato
@@ -17,6 +17,14 @@ harvest: {after: transplant, days: [60, 85], weeks: 10}
 spacing_cm: {plant: 50, row: 70}
 tasks:
   - {id: stake, after: transplant, days: 7, label: {en: Stake, fr: Tuteurer}}
+rotation_years: 4           # years before the family comes back to the same place
+companions: [basil, carrot] # good neighbours
+avoid: [potato]             # bad neighbours
+tips:                       # short advice, en is required
+  en:
+    - "Plant deep: roots grow along the buried stem."
+  fr:
+    - "Planter profond : des racines poussent le long de la tige enterrée."
 ```
 
 ## Windows
@@ -36,6 +44,15 @@ tasks:
 ## Tasks
 
 One-off jobs, `days` after `sowing` or `transplant`. `label` needs at least `en`.
+
+## Rotation and neighbours
+
+- `rotation_years`: a crop of the same `family` grown in the same place fewer years ago gets a reminder. `4` means a tomato after potatoes of three years ago is flagged, after four years it is not. Leave it out for no rule.
+- `companions` and `avoid` name other species by `id`. One side is enough: if the tomato avoids the potato, the potato is told about the tomato too. Both sides must agree, and every id must exist.
+
+## Tips
+
+A few short sentences per language, practical and specific to the crop. `en` is required.
 
 ## Sources
 

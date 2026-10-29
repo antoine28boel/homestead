@@ -11,3 +11,12 @@ transplant:
 germination_days: [7, 14]
 harvest: {after: sowing, days: [50, 60], weeks: 20}
 spacing_cm: {plant: 30, row: 40}
+rotation_years: 3
+companions: [cabbage, lettuce, onion]
+tips:
+  en:
+    - "Pick the outer leaves: the heart keeps growing for months."
+    - "Mulch to keep the soil moist."
+  fr:
+    - "Cueillir les feuilles extérieures : le cœur continue de pousser pendant des mois."
+    - "Pailler pour garder la terre fraîche."

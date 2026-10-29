@@ -13,3 +13,13 @@ harvest: {after: sowing, days: [100, 130], weeks: 4}
 spacing_cm: {plant: 100, row: 150}
 tasks:
   - {id: mulch, after: transplant, days: 14, label: {en: Mulch, fr: Pailler}}
+rotation_years: 3
+companions: [bush_bean, pole_bean, sweet_corn]
+avoid: [potato]
+tips:
+  en:
+    - "Very hungry: plant on compost or well-rotted manure."
+    - "Leave the fruit on the plant until the stalk turns corky, then store dry."
+  fr:
+    - "Très gourmande : planter sur du compost ou du fumier bien décomposé."
+    - "Laisser les fruits sur le pied jusqu'à ce que le pédoncule soit liégeux, puis les ranger au sec."

@@ -7,3 +7,12 @@ sow_direct:
 germination_days: [7, 14]
 harvest: {after: sowing, days: [70, 100], weeks: 12}
 spacing_cm: {plant: 5, row: 15}
+rotation_years: 2
+companions: [leek, onion]
+tips:
+  en:
+    - "Sow on firmed soil and keep it moist until it comes up."
+    - "Fully hardy: a good crop to follow the summer vegetables."
+  fr:
+    - "Semer sur une terre tassée et la garder humide jusqu'à la levée."
+    - "Très rustique : idéale après les légumes d'été."

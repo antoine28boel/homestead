@@ -12,3 +12,12 @@ spacing_cm: {plant: 50, row: 70}
 tasks:
   - {id: prick_out, after: sowing, days: 30, methods: [sow_indoors], label: {en: Prick out into pots, fr: Repiquer en godets}}
   - {id: stake, after: transplant, days: 14, label: {en: Stake, fr: Tuteurer}}
+rotation_years: 4
+companions: [basil, bush_bean, pepper]
+tips:
+  en:
+    - "It needs heat: in a cool climate, grow it in the greenhouse."
+    - "Keep five or six fruits per plant for larger ones."
+  fr:
+    - "Elle a besoin de chaleur : sous un climat frais, la cultiver en serre."
+    - "Garder cinq ou six fruits par pied pour qu'ils grossissent."

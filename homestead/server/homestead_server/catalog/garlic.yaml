@@ -7,3 +7,13 @@ transplant:
   - {start: -10, end: -6, harvest_days: [100, 130]}
 harvest: {after: transplant, days: [230, 270], weeks: 3}
 spacing_cm: {plant: 10, row: 25}
+rotation_years: 3
+companions: [beetroot, carrot, lettuce, tomato]
+avoid: [broad_bean, bush_bean, pea, pole_bean]
+tips:
+  en:
+    - "Plant the cloves tip up, 3 cm deep, in well-drained soil."
+    - "Stop watering a month before harvest; lift when half the leaves are yellow."
+  fr:
+    - "Planter les caïeux pointe en haut, à 3 cm de profondeur, en sol bien drainé."
+    - "Arrêter d'arroser un mois avant la récolte ; arracher quand la moitié des feuilles a jauni."

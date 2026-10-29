@@ -9,3 +9,13 @@ harvest: {after: sowing, days: [60, 90], weeks: 8}
 spacing_cm: {plant: 10, row: 30}
 tasks:
   - {id: thin, after: sowing, days: 25, label: {en: Thin out, fr: Éclaircir}}
+rotation_years: 3
+companions: [cabbage, lettuce, onion]
+avoid: [pole_bean]
+tips:
+  en:
+    - "Each seed is a cluster: thin to one plant every 10 cm."
+    - "Lift them the size of a tennis ball, for tender roots."
+  fr:
+    - "Chaque graine en contient plusieurs : éclaircir à un plant tous les 10 cm."
+    - "Les arracher à la taille d'une balle de tennis, pour des racines tendres."

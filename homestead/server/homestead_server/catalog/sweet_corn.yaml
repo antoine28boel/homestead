@@ -13,3 +13,13 @@ harvest: {after: sowing, days: [80, 100], weeks: 3}
 spacing_cm: {plant: 30, row: 60}
 tasks:
   - {id: earth_up, after: sowing, days: 40, label: {en: Earth up, fr: Butter}}
+rotation_years: 2
+companions: [bush_bean, cucumber, melon, pole_bean, squash]
+avoid: [tomato]
+tips:
+  en:
+    - "Plant in a block rather than one long row: the wind pollinates it."
+    - "Ripe when the silk turns brown and a kernel gives milky juice."
+  fr:
+    - "Planter en carré plutôt qu'en une longue ligne : c'est le vent qui le pollinise."
+    - "Mûr quand les soies brunissent et qu'un grain donne un jus laiteux."

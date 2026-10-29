@@ -13,3 +13,13 @@ harvest: {after: sowing, days: [55, 70], weeks: 8}
 spacing_cm: {plant: 40, row: 80}
 tasks:
   - {id: train, after: transplant, days: 14, label: {en: Train on the trellis, fr: Palisser}}
+rotation_years: 3
+companions: [bush_bean, lettuce, pea, radish, sweet_corn]
+avoid: [potato]
+tips:
+  en:
+    - "Water regularly: irregular watering makes bitter fruit."
+    - "Train on a net or trellis: the fruit stays clean and the air moves."
+  fr:
+    - "Arroser régulièrement : un arrosage irrégulier rend les fruits amers."
+    - "Palisser sur un filet ou un treillis : les fruits restent propres et l'air circule."

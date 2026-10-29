@@ -215,7 +215,7 @@ Au moment de placer une culture, l'interface signale :
 |---|---|---|
 | ~~0–1~~ | ~~Intégration seule : dates de gel, espaces, cultures, tâches, calendrier (v0.2)~~ | Faites le 27/10/2026 ; le moteur est repris dans l'application |
 | **A. Socle** | Application (serveur, base, interface derrière l'ingress) ; espaces, saisons, cultures, stades, journal, récoltes ; saisie rapide sur smartphone ; intégration compagnon (découverte, tâches, calendrier, stades, capteurs) ; images Docker et dépôt d'applications | Code écrit et testé le 27/10/2026 (v0.3.0) ; installé dans HA OS le 28/10/2026 |
-| **B. Planification** | Plan dessiné, rotation, associations, semis échelonnés, grainothèque, conseils par culture | Plan dessiné fait le 28/10/2026 (v0.4.0) ; le reste avant les semis de février |
+| **B. Planification** | Plan dessiné, rotation, associations, semis échelonnés, grainothèque, conseils par culture | Plan dessiné fait le 28/10/2026 (v0.4.0) ; rotation, associations et conseils le 29/10/2026 (v0.7.0) ; semis échelonnés et grainothèque avant les semis de février |
 | **C. Eau et climat** | Bilan hydrique, degrés-jours, sondes, gel, serre, cuve, vannes et blueprints | Mars–avril 2027 |
 | **D. Photos** | Album, timelapse, surface verte, identification, diagnostic par IA, maladies ; maturité en dernier | Printemps 2027 |
 | **E. Verger et vivaces** | Arbres, petits fruits, aromatiques, taille, traitements, floraison et pollinisation, greffes | Été 2027 |
@@ -262,5 +262,15 @@ Avant chaque publication : tests automatisés, puis essai sur une installation H
 - **Dates de gelée calculées** : Réglages → « Calculer d'après la météo passée ». Archive Open-Meteo (minimales journalières à 2 m, 30 ans), position de HA arrondie à 0,1° (≈ 10 km), altitude de HA si elle est renseignée. Gel = minimale ≤ 0 °C. Dates retenues : celles qui ne sont dépassées qu'une année sur dix (dernière gelée au printemps, première en automne) ; la médiane est affichée pour comparaison. Proposées, jamais enregistrées sans action. Pour le jardin (28/10/2026) : 30 avril et 21 octobre (médianes 15 avril et 12 novembre).
 - **Prévisions** : l'app lit toutes les heures `weather.get_forecasts` (quotidien, `templow`) de l'entité météo choisie (par défaut la première ; ici `weather.maison`, IRM). Nuit gélive sur 7 jours : tâche « Protéger du gel » pour les cultures en place (sensibles ≤ 1 °C, semi-rustiques ≤ −2 °C, serre +3 °C), due la veille ; plantation, mise en place et semis en place des cultures sensibles reportés au lendemain de la dernière nuit gélive (❄ dans les étapes et les tâches). Bandeau sur Aujourd'hui ; capteur HA « Prochaine gelée » (date + température).
 - **Pas encore** : décaler tout le calendrier selon la chaleur réellement observée (degrés-jours), alertes de canicule et d'arrosage (phase C).
+
+### Phase B, rotation, voisins et conseils (v0.7.0, 29/10/2026)
+
+- **Catalogue** : champs `rotation_years` (années avant le retour de la famille au même endroit : 4 pour solanacées, choux, navet et pois, 2 pour radis, salades, radis, épinard, basilic, maïs, mâche, 3 pour les autres), `companions`, `avoid` et `tips` (deux conseils fr/en par espèce, pour les 30 espèces). Un seul côté suffit pour un voisin ; les deux côtés doivent être d'accord, et chaque id doit exister (vérifié au chargement).
+- **Calcul** (`rotation.py`, `Garden.placement`) : pour une culture, on regarde les autres cultures de son espace.
+  - Rotation : même famille, saison antérieure de moins de `rotation_years` ans.
+  - Voisins : bon ou mauvais voisin présent en même temps (période en place : semis en place ou mise en place, jusqu'à la fin de récolte, réelles ou prévues).
+  - Si les deux cultures ont une zone dessinée : rotation seulement si les zones se chevauchent, voisins seulement à moins d'un mètre. Une culture prévue pour une saison passée mais jamais lancée ne compte pas.
+- **Interface** : « Dans cet espace » avant de confirmer une culture (pour chaque façon de la lancer) et sur la fiche culture ; section « Conseils » de la fiche (conseils, bons voisins, à éloigner, règle de rotation). Ce sont des rappels, jamais des interdictions.
+- **Pas encore** : voisins entre espaces proches sur le plan, alertes sur le plan lui-même.
 
 *Décisions déjà prises : nom Homestead (27/10) ; Plant-it supprimé (27/10) ; jardin = un carré surélevé, une serre avec 2 bacs, un potager d'environ 8 × 4 m (27/10) ; périmètre, architecture et ordre des phases (27/10).*

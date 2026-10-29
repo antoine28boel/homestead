@@ -5,6 +5,7 @@ import { useRouter } from "vue-router";
 import { api, ApiError } from "../api.js";
 import Icon from "../components/Icon.vue";
 import LogForm from "../components/LogForm.vue";
+import PlacementNotes from "../components/PlacementNotes.vue";
 import Sheet from "../components/Sheet.vue";
 import StepList from "../components/StepList.vue";
 import TaskRow from "../components/TaskRow.vue";
@@ -161,6 +162,13 @@ async function logged() {
       <p v-if="planting.notes" class="muted notes">{{ planting.notes }}</p>
     </div>
 
+    <template v-if="planting.placement.length">
+      <h2>{{ t("placement") }}</h2>
+      <div class="card">
+        <PlacementNotes :notes="planting.placement" />
+      </div>
+    </template>
+
     <template v-if="planting.tasks.length">
       <h2>{{ t("tasks") }}</h2>
       <div class="list">
@@ -198,6 +206,22 @@ async function logged() {
         </button>
       </div>
       <div v-if="!planting.journal.length" class="empty">{{ t("no_entries") }}</div>
+    </div>
+
+    <h2>{{ t("advice") }}</h2>
+    <div class="card advice">
+      <ul v-if="planting.advice.tips.length" class="tips">
+        <li v-for="tip in planting.advice.tips" :key="tip">{{ tip }}</li>
+      </ul>
+      <p v-if="planting.advice.companions.length">
+        <strong>{{ t("good_neighbours") }}</strong> {{ planting.advice.companions.join(", ") }}
+      </p>
+      <p v-if="planting.advice.avoid.length">
+        <strong>{{ t("bad_neighbours") }}</strong> {{ planting.advice.avoid.join(", ") }}
+      </p>
+      <p v-if="planting.advice.rotation_years" class="muted">
+        {{ t("rotation_rule", { family: planting.advice.family, n: planting.advice.rotation_years }) }}
+      </p>
     </div>
 
     <h2>{{ t("history") }}</h2>
@@ -277,6 +301,19 @@ async function logged() {
 .notes {
   white-space: pre-line;
   margin: 12px 0 0;
+}
+
+.advice p {
+  margin: 8px 0 0;
+}
+
+.tips {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.tips li + li {
+  margin-top: 4px;
 }
 
 .aside {

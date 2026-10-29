@@ -33,6 +33,16 @@ Each crop goes through its own steps, taken from the catalogue: sow under cover 
   - planting out (and sowing tender crops in place) waits until the day after the last frosty night, with a ❄ note;
   - **Today** shows the coming frost.
 
+## Rotation, neighbours and advice
+
+When you schedule a crop, and on the crop's page, Homestead looks at the other crops of the space:
+
+- **Rotation:** a crop of the same family grown there too recently (tomato after potato, cabbage after radish…). Each crop of the catalogue says how many years its family should stay away: four for nightshades, cabbages and peas, two for quick crops such as lettuce or radish, three for most others.
+- **Neighbours:** a good or a bad neighbour growing there at the same time (basil next to tomato, beans away from onions…).
+- When both crops have their own area in the space, only areas that overlap count for rotation, and only areas less than a metre apart for neighbours. A crop scheduled for an earlier season but never started does not count.
+
+These are reminders, never rules: you can always go ahead. The crop's page also gives short **advice**, its good and bad neighbours, and how long its family should stay away.
+
 ## In Home Assistant
 
 When the app starts, Home Assistant offers to add the **Homestead** integration (Settings → Devices & services). Accept it to get:

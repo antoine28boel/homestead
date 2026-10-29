@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { api } from "../api.js";
+import PlacementNotes from "../components/PlacementNotes.vue";
 import StepList from "../components/StepList.vue";
 import { t } from "../i18n.js";
 import { failed, store } from "../store.js";
@@ -123,6 +124,13 @@ async function create() {
             <span class="grow">{{ option.label }}</span>
             <span class="badge">{{ option.season }}</span>
           </button>
+        </div>
+      </div>
+
+      <div v-if="option?.placement.length" class="field">
+        <span class="muted">{{ t("placement") }}</span>
+        <div class="card">
+          <PlacementNotes :notes="option.placement" />
         </div>
       </div>
 

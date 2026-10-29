@@ -62,6 +62,15 @@ from .planner import (
     tasks,
     window_period,
 )
+from .rotation import (
+    RELATION_AVOID,
+    Region,
+    nearby,
+    overlap,
+    relation,
+    rotation_clash,
+    same_ground,
+)
 from .texts import Texts
 
 
@@ -118,6 +127,11 @@ STEP_OPEN = "open"
 STEP_PLANNED = "planned"
 STEP_SKIPPED = "skipped"
 """Its moment passed without it being ticked."""
+
+NOTE_AVOID = "avoid"
+NOTE_ROTATION = "rotation"
+NOTE_COMPANION = "companion"
+NOTE_ORDER = (NOTE_AVOID, NOTE_ROTATION, NOTE_COMPANION)
 
 
 def is_generated(uid: str) -> bool:
@@ -261,6 +275,14 @@ class Garden:
                 )
                 state = PlantingState()
                 plan = schedule(planting, state, self.climate)
+                candidate = PlantingRow(
+                    species=species.id,
+                    space_id=space.id,
+                    method=method,
+                    window=index,
+                    season=season,
+                    stage=STAGE_PLANNED,
+                )
                 options.append(
                     {
                         "key": f"{method}:{index}",
@@ -278,9 +300,84 @@ class Garden:
                             self._step(task, STEP_PLANNED, task.due)
                             for task in steps(planting, state, plan)
                         ],
+                        "placement": self.placement(candidate),
                     }
                 )
         return options
+
+    # Rotation and neighbours
+
+    def occupancy(self, row: PlantingRow) -> tuple[date, date]:
+        """Days a planting stands in its space, actual or expected."""
+        plan = self.schedule(row)
+        if row.method == METHOD_SOW_DIRECT:
+            start = row.sown_on or (plan.sow[0] if plan.sow else plan.harvest[0])
+        else:
+            start = row.transplanted_on or (
+                plan.transplant[0] if plan.transplant else plan.harvest[0]
+            )
+        end = row.finished_on or plan.harvest[1]
+        return start, max(start, end)
+
+    @staticmethod
+    def region(row: PlantingRow) -> Region | None:
+        """Part of its space a planting takes; None for the whole space."""
+        x, y = row.region_x, row.region_y
+        width, height = row.region_width, row.region_height
+        if x is None or y is None or width is None or height is None:
+            return None
+        return Region(x, y, width, height)
+
+    def placement(self, row: PlantingRow) -> list[dict[str, Any]]:
+        """What to know about the place of a planting: rotation, neighbours."""
+        if row.space_id is None:
+            return []
+        species = self.catalog[row.species]
+        region = self.region(row)
+        period = self.occupancy(row)
+        notes: dict[str, dict[str, Any]] = {}
+        for other in self.plantings(space_id=row.space_id):
+            # A crop planned for an earlier season that never started did
+            # not grow there.
+            if other.id == row.id or (
+                other.stage == STAGE_PLANNED and other.season < row.season
+            ):
+                continue
+            other_species = self.catalog[other.species]
+            other_region = self.region(other)
+            name = self.planting_name(other)
+            note = None
+            if rotation_clash(
+                species, row.season, other_species, other.season
+            ) and same_ground(region, other_region):
+                note = {
+                    "kind": NOTE_ROTATION,
+                    "text": self.texts(
+                        "note_rotation",
+                        family=self.texts.family(species.family),
+                        season=other.season,
+                        name=name,
+                        years=species.rotation_years,
+                    ),
+                }
+            elif (
+                (kind := relation(species, other_species)) is not None
+                and nearby(region, other_region)
+                and overlap(period, self.occupancy(other))
+            ):
+                note = {
+                    "kind": NOTE_AVOID if kind == RELATION_AVOID else NOTE_COMPANION,
+                    "text": self.texts(f"note_{kind}", name=name),
+                }
+            if note is not None and note["text"] not in notes:
+                notes[note["text"]] = note | {
+                    "planting_id": other.id,
+                    "season": other.season,
+                }
+        return sorted(
+            notes.values(),
+            key=lambda note: (NOTE_ORDER.index(note["kind"]), -note["season"]),
+        )
 
     def sow_now(self, space: SpaceRow) -> dict[str, list[dict[str, str]]]:
         """Species that can be started now in this space, by method."""

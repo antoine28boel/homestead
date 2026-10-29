@@ -12,3 +12,12 @@ spacing_cm: {plant: 25, row: 30}
 tasks:
   - {id: prick_out, after: sowing, days: 21, methods: [sow_indoors], label: {en: Prick out into pots, fr: Repiquer en godets}}
   - {id: pinch, after: transplant, days: 14, label: {en: Pinch out the tips, fr: Pincer les extrémités}}
+rotation_years: 2
+companions: [eggplant, pepper, tomato]
+tips:
+  en:
+    - "Pinch out the flower buds to keep the leaves coming."
+    - "Water at the foot in the morning; nights below 10 °C stop it."
+  fr:
+    - "Pincer les boutons floraux pour garder des feuilles."
+    - "Arroser au pied le matin ; il s'arrête sous 10 °C la nuit."

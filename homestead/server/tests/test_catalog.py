@@ -8,9 +8,11 @@ import pytest
 
 from homestead_server.catalog import (
     CatalogError,
+    check_neighbours,
     load_catalog,
     parse_species,
 )
+from homestead_server.texts import Texts
 
 TOMATO = {
     "id": "tomato",
@@ -32,6 +34,10 @@ def test_bundled_catalog() -> None:
         assert "fr" in species.names, species.id
         for task in species.tasks:
             assert "fr" in task.label, f"{species.id}.{task.id}"
+        assert species.rotation_years > 0, species.id
+        assert species.tips["en"], species.id
+        assert len(species.tips["fr"]) == len(species.tips["en"]), species.id
+        assert Texts("fr").family(species.family) != species.family, species.id
 
 
 def test_names() -> None:
@@ -72,12 +78,41 @@ def test_methods_and_nursery() -> None:
             ]
         },
         {"harvest": None},
+        {"companions": ["basil"], "avoid": ["basil"]},
+        {"avoid": ["tomato"]},
+        {"companions": "basil"},
+        {"tips": {"fr": ["Tuteurer"]}},
+        {"tips": {"en": "Stake"}},
+        {"rotation_years": -1},
     ],
 )
 def test_invalid(change: dict) -> None:
     """Malformed species are refused with a readable error."""
     with pytest.raises(CatalogError):
         parse_species(TOMATO | change)
+
+
+def test_tips() -> None:
+    """Tips follow the language, with English as fallback."""
+    species = parse_species(
+        TOMATO | {"tips": {"en": ["Stake early."], "fr": ["Tuteurer tôt."]}}
+    )
+    assert species.tip_list("fr-BE") == ["Tuteurer tôt."]
+    assert species.tip_list("nl") == ["Stake early."]
+    assert parse_species(TOMATO).tip_list("fr") == []
+
+
+def test_neighbours_must_agree() -> None:
+    """Neighbours exist, and one side cannot call the other a companion
+    while the other wants it away."""
+    tomato = parse_species(TOMATO | {"companions": ["basil"]})
+    basil = parse_species(
+        TOMATO | {"id": "basil", "names": {"en": "Basil"}, "avoid": ["tomato"]}
+    )
+    with pytest.raises(CatalogError, match="disagree"):
+        check_neighbours({"tomato": tomato, "basil": basil})
+    with pytest.raises(CatalogError, match="unknown neighbour"):
+        check_neighbours({"tomato": tomato})
 
 
 def test_file_name_must_match_id(tmp_path: Path) -> None:

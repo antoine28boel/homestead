@@ -13,3 +13,12 @@ harvest: {after: sowing, days: [55, 80], weeks: 3}
 spacing_cm: {plant: 25, row: 30}
 tasks:
   - {id: prick_out, after: sowing, days: 21, methods: [sow_indoors], label: {en: Prick out into pots, fr: Repiquer en godets}}
+rotation_years: 2
+companions: [beetroot, carrot, cucumber, radish]
+tips:
+  en:
+    - "Sow a few at a time, every two or three weeks."
+    - "It bolts in heat: in summer, sow in half shade and water in the evening."
+  fr:
+    - "Semer peu à la fois, toutes les deux ou trois semaines."
+    - "Elle monte en graine à la chaleur : en été, semer à mi-ombre et arroser le soir."

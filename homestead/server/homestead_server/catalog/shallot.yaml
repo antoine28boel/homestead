@@ -6,3 +6,13 @@ transplant:
   - {start: -10, end: -6}
 harvest: {after: transplant, days: [100, 130], weeks: 3}
 spacing_cm: {plant: 15, row: 25}
+rotation_years: 3
+companions: [beetroot, carrot, lettuce]
+avoid: [broad_bean, bush_bean, pea, pole_bean]
+tips:
+  en:
+    - "Plant the bulbs tip up, with the top just showing."
+    - "Lift when the leaves turn yellow, and dry them before storing."
+  fr:
+    - "Planter les bulbes pointe en haut, le sommet affleurant."
+    - "Arracher quand les feuilles jaunissent, et les faire sécher avant de les ranger."

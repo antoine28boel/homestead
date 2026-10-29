@@ -2,7 +2,7 @@
 
 Your whole homestead in Home Assistant: vegetable garden, greenhouse, orchard and chicken coop. Every planting, season after season, with photos.
 
-> **Status: early development.** Version 0.6 computes your **frost dates** from thirty years of local weather and watches the **forecast**: crops in the open get a task before a frost, and planting out waits. Version 0.5 schedules **every step of a crop** (sowing, pricking out, hardening off, planting out, staking, earthing up, harvest…) in the calendar. Version 0.4 added the **garden plan**: draw it over an aerial view or a drone photo, lay out every crop (grid, rows, staggered, free), and see it come alive on a dashboard card with the season and the weather. Version 0.3 brought the app + companion integration: spaces, seasons, crops, stages, tasks, calendar, journal and harvests. Not ready for everyday use yet.
+> **Status: early development.** Version 0.7 checks **rotation and neighbours** when you place a crop (same family too recently, good and bad companions) and gives **advice** for each crop. Version 0.6 computes your **frost dates** from thirty years of local weather and watches the **forecast**: crops in the open get a task before a frost, and planting out waits. Version 0.5 schedules **every step of a crop** (sowing, pricking out, hardening off, planting out, staking, earthing up, harvest…) in the calendar. Version 0.4 added the **garden plan**: draw it over an aerial view or a drone photo, lay out every crop (grid, rows, staggered, free), and see it come alive on a dashboard card with the season and the weather. Version 0.3 brought the app + companion integration: spaces, seasons, crops, stages, tasks, calendar, journal and harvests. Not ready for everyday use yet.
 
 ## Goals
 
@@ -26,7 +26,7 @@ Your whole homestead in Home Assistant: vegetable garden, greenhouse, orchard an
 On Home Assistant OS, the app installs from the app store and the integration from HACS; the app announces itself, so the integration needs no address or token. On Container or Core installs, the same Docker image runs next to Home Assistant:
 
 ```bash
-docker run -d --name homestead -p 8099:8099 -v homestead:/data -e TZ=Europe/Brussels -e HOMESTEAD_LANGUAGE=fr ghcr.io/antoine28boel/homestead:0.6.0
+docker run -d --name homestead -p 8099:8099 -v homestead:/data -e TZ=Europe/Brussels -e HOMESTEAD_LANGUAGE=fr ghcr.io/antoine28boel/homestead:0.7.0
 ```
 
 The API token for the integration is printed in the container log at startup. Set `HOMESTEAD_REQUIRE_TOKEN=1` to also protect the web interface; open it once with `/login?token=…`.

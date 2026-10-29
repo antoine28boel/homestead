@@ -11,3 +11,13 @@ harvest: {after: transplant, days: [100, 150], weeks: 16}
 spacing_cm: {plant: 15, row: 30}
 tasks:
   - {id: earth_up, after: transplant, days: 45, label: {en: Earth up, fr: Butter}}
+rotation_years: 3
+companions: [carrot, lettuce, tomato]
+avoid: [broad_bean, bush_bean, pea, pole_bean]
+tips:
+  en:
+    - "At planting, trim the roots and leaves a little and drop each plant into a deep hole."
+    - "Earth up as they grow for a long white stem."
+  fr:
+    - "À la plantation, raccourcir un peu racines et feuilles et placer chaque plant dans un trou profond."
+    - "Butter au fur et à mesure pour un long fût blanc."

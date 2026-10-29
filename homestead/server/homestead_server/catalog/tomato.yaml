@@ -13,3 +13,13 @@ tasks:
   - {id: prick_out, after: sowing, days: 21, methods: [sow_indoors], label: {en: Prick out into pots, fr: Repiquer en godets}}
   - {id: stake, after: transplant, days: 7, label: {en: Stake, fr: Tuteurer}}
   - {id: side_shoots, after: transplant, days: 21, label: {en: Remove side shoots, fr: Supprimer les gourmands}}
+rotation_years: 4
+companions: [basil, carrot, garlic, parsley]
+avoid: [potato]
+tips:
+  en:
+    - "Plant deep: roots grow along the buried stem."
+    - "Water at the foot, never on the leaves, to limit blight."
+  fr:
+    - "Planter profond : des racines poussent le long de la tige enterrée."
+    - "Arroser au pied, jamais sur les feuilles, pour limiter le mildiou."

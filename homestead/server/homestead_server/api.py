@@ -36,7 +36,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from . import __version__
+from . import __version__, rotation
 from .catalog import Species, load_catalog
 from .climate import ClimateError, Night, fetch_minimums, frost_dates
 from .config import INGRESS_IP, Settings
@@ -423,6 +423,30 @@ def species_out(species: Species, language: str) -> dict[str, Any]:
         "methods": species.methods,
         "spacing_cm": species.spacing_cm,
         "germination_days": species.germination_days,
+        "rotation_years": species.rotation_years,
+        "companions": list(species.companions),
+        "avoid": list(species.avoid),
+        "tips": species.tip_list(language),
+    }
+
+
+def advice_out(garden: Garden, species: Species) -> dict[str, Any]:
+    """Tips and neighbours of a species, either side of the catalogue."""
+    language = garden.texts.language
+
+    def names(relation: str) -> list[str]:
+        return sorted(
+            other.name(language)
+            for other in garden.catalog.values()
+            if other.id != species.id and rotation.relation(species, other) == relation
+        )
+
+    return {
+        "tips": species.tip_list(language),
+        "companions": names(rotation.RELATION_COMPANION),
+        "avoid": names(rotation.RELATION_AVOID),
+        "family": garden.texts.family(species.family),
+        "rotation_years": species.rotation_years,
     }
 
 
@@ -746,6 +770,8 @@ def planting(
     result = planting_out(garden, row)
     result["tasks"] = garden.planting_tasks(row)
     result["steps"] = garden.planting_steps(row)
+    result["placement"] = garden.placement(row)
+    result["advice"] = advice_out(garden, garden.catalog[row.species])
     result["journal"] = [
         journal_out(entry)
         for entry in sorted(row.journal, key=lambda entry: entry.day, reverse=True)

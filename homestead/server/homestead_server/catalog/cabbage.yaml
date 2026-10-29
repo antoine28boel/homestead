@@ -12,3 +12,13 @@ spacing_cm: {plant: 50, row: 60}
 tasks:
   - {id: prick_out, after: sowing, days: 21, methods: [sow_indoors], label: {en: Prick out into pots, fr: Repiquer en godets}}
   - {id: net, after: transplant, days: 0, label: {en: Cover with insect netting, fr: Protéger avec un filet anti-insectes}}
+rotation_years: 4
+companions: [beetroot, lettuce, onion]
+avoid: [tomato]
+tips:
+  en:
+    - "Firm the soil well around the plants: cabbages like a firm bed."
+    - "Net against the cabbage white and pigeons; look under the leaves for caterpillars."
+  fr:
+    - "Bien tasser la terre autour des plants : les choux aiment un sol ferme."
+    - "Protéger d'un filet contre la piéride et les pigeons ; chercher les chenilles sous les feuilles."

@@ -11,3 +11,12 @@ harvest: {after: transplant, days: [75, 95], weeks: 4}
 spacing_cm: {plant: 60, row: 100}
 tasks:
   - {id: pinch, after: transplant, days: 14, label: {en: Pinch out the stems, fr: Pincer les tiges}}
+rotation_years: 3
+companions: [sweet_corn]
+tips:
+  en:
+    - "Pinch the main stem above the second leaf, then the side shoots, to get fruit."
+    - "Ripe when the stalk cracks and the fruit smells sweet."
+  fr:
+    - "Pincer la tige principale au-dessus de la deuxième feuille, puis les tiges secondaires, pour avoir des fruits."
+    - "Mûr quand le pédoncule se craquelle et que le fruit sent bon."

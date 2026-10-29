@@ -7,3 +7,12 @@ sow_direct:
 germination_days: [4, 7]
 harvest: {after: sowing, days: [25, 35], weeks: 2}
 spacing_cm: {plant: 3, row: 15}
+rotation_years: 2
+companions: [carrot, lettuce, pea]
+tips:
+  en:
+    - "Ready in three to four weeks: sow a short row every fortnight."
+    - "Water often: in dry soil they turn woody and hot."
+  fr:
+    - "Prêts en trois ou quatre semaines : semer un petit rang tous les quinze jours."
+    - "Arroser souvent : en terre sèche, ils deviennent creux et piquants."

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -27,7 +27,7 @@ class CatalogError(ValueError):
     """A species file does not follow the catalogue format."""
 
 
-def localized(texts: dict[str, str], language: str) -> str:
+def localized[T](texts: dict[str, T], language: str) -> T:
     """Pick a text in the language of Home Assistant, falling back to English."""
     return texts.get(language) or texts.get(language.split("-")[0]) or texts["en"]
 
@@ -84,10 +84,24 @@ class Species:
     spacing_cm: tuple[int, int] | None = None
     """In the row, then between rows."""
     tasks: tuple[CropTask, ...] = ()
+    rotation_years: int = 0
+    """Years before the family comes back to the same place; 0 for no rule."""
+    companions: tuple[str, ...] = ()
+    """Species that grow well next to this one."""
+    avoid: tuple[str, ...] = ()
+    """Species to keep away from this one."""
+    tips: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    """Short advice, by language."""
 
     def name(self, language: str) -> str:
         """Name of the species in the given language."""
         return localized(self.names, language)
+
+    def tip_list(self, language: str) -> list[str]:
+        """Advice in the given language, falling back to English."""
+        if not self.tips:
+            return []
+        return list(localized(self.tips, language))
 
     @property
     def methods(self) -> list[str]:
@@ -198,6 +212,10 @@ def parse_species(raw: dict[str, Any]) -> Species:
                 )
                 for task in raw.get("tasks") or []
             ),
+            rotation_years=int(raw.get("rotation_years") or 0),
+            companions=_ids(raw.get("companions"), "companions"),
+            avoid=_ids(raw.get("avoid"), "avoid"),
+            tips=_tips(raw.get("tips")),
         )
     except (KeyError, TypeError) as err:
         raise CatalogError(f"missing or invalid field: {err}") from err
@@ -205,7 +223,47 @@ def parse_species(raw: dict[str, Any]) -> Species:
         raise CatalogError("no sowing or planting window")
     if any("en" not in task.label for task in species.tasks):
         raise CatalogError("task labels must include en")
+    if species.rotation_years < 0:
+        raise CatalogError("rotation_years cannot be negative")
+    if set(species.companions) & set(species.avoid):
+        raise CatalogError("a species cannot be both a companion and to avoid")
+    if species.id in species.companions + species.avoid:
+        raise CatalogError("a species cannot be its own neighbour")
     return species
+
+
+def _ids(raw: Any, field: str) -> tuple[str, ...]:
+    if raw is None:
+        return ()
+    if not isinstance(raw, list):
+        raise CatalogError(f"{field} must be a list of species ids")
+    return tuple(str(item) for item in raw)
+
+
+def _tips(raw: Any) -> dict[str, tuple[str, ...]]:
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict) or "en" not in raw:
+        raise CatalogError("tips must be lists of texts by language, with en")
+    tips = {}
+    for language, texts in raw.items():
+        if not isinstance(texts, list) or not all(isinstance(t, str) for t in texts):
+            raise CatalogError(f"tips.{language} must be a list of texts")
+        tips[str(language)] = tuple(texts)
+    return tips
+
+
+def check_neighbours(catalog: dict[str, Species]) -> None:
+    """Neighbours must exist and the two sides must agree."""
+    for species in catalog.values():
+        for other_id in species.companions + species.avoid:
+            if other_id not in catalog:
+                raise CatalogError(f"{species.id}: unknown neighbour {other_id!r}")
+        for other_id in species.companions:
+            if species.id in catalog[other_id].avoid:
+                raise CatalogError(
+                    f"{species.id} and {other_id} disagree about being neighbours"
+                )
 
 
 def load_catalog(directory: Path = CATALOG_DIR) -> dict[str, Species]:
@@ -221,4 +279,5 @@ def load_catalog(directory: Path = CATALOG_DIR) -> dict[str, Species]:
         if species.id != path.stem:
             raise CatalogError(f"{path.name}: id must be {path.stem!r}")
         catalog[species.id] = species
+    check_neighbours(catalog)
     return catalog

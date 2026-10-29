@@ -104,6 +104,57 @@ def test_starts_and_sow_now(client: TestClient, spaces: dict[str, str]) -> None:
     assert {entry["space_id"] for entry in everywhere} == set(spaces.values())
 
 
+def test_rotation_and_neighbours(client: TestClient, spaces: dict[str, str]) -> None:
+    """Placing a crop tells of its family's past here and of its neighbours."""
+    plot = spaces["plot"]
+    old = _plant(client, "tomato", plot, season=2026)
+    client.post(
+        f"/api/plantings/{old['id']}/stage",
+        json={"stage": "finished", "day": "2026-10-10"},
+    )
+    # Planned for last year but never started: it did not grow there.
+    _plant(client, "pepper", plot, season=2026)
+    _plant(client, "basil", plot)
+
+    def notes(species: str) -> list[dict]:
+        options = client.get(
+            f"/api/catalog/{species}/starts", params={"space_id": plot}
+        ).json()
+        option = next(option for option in options if option["season"] == 2027)
+        return option["placement"]
+
+    potato = notes("potato")
+    assert [note["kind"] for note in potato] == ["rotation"]
+    assert potato[0]["text"] == (
+        "Même famille (solanacées) ici en 2026 : Tomate. Laisser 4 ans entre les deux."
+    )
+    assert potato[0]["planting_id"] == old["id"]
+
+    potatoes = _plant(client, "potato", plot, method="plant")
+    assert [note["kind"] for note in notes("tomato")] == [
+        "avoid",
+        "rotation",
+        "companion",
+    ]
+
+    # Regions drawn two metres apart are no longer neighbours.
+    tomato = _plant(client, "tomato", plot)
+    region = {"region_y": 0, "region_width": 1, "region_height": 1}
+    client.patch(f"/api/plantings/{potatoes['id']}", json={"region_x": 0, **region})
+    client.patch(f"/api/plantings/{tomato['id']}", json={"region_x": 3, **region})
+    detail = client.get(f"/api/plantings/{tomato['id']}").json()
+    assert [note["text"] for note in detail["placement"]] == [
+        "Même famille (solanacées) ici en 2026 : Tomate. Laisser 4 ans entre les deux.",
+        "Bon voisin : Basilic.",
+    ]
+    advice = detail["advice"]
+    assert advice["family"] == "solanacées"
+    assert "Basilic" in advice["companions"]
+    # Sweet corn names the tomato as a bad neighbour: it shows on both sides.
+    assert {"Maïs doux", "Pomme de terre"} <= set(advice["avoid"])
+    assert advice["tips"][0].startswith("Planter profond")
+
+
 def test_planting_lifecycle(
     client: TestClient, spaces: dict[str, str], clock: FakeClock
 ) -> None:

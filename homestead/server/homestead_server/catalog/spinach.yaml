@@ -8,3 +8,12 @@ sow_direct:
 germination_days: [7, 14]
 harvest: {after: sowing, days: [40, 60], weeks: 4}
 spacing_cm: {plant: 10, row: 30}
+rotation_years: 2
+companions: [broad_bean, cabbage, pea, radish]
+tips:
+  en:
+    - "It bolts in long days: sow in spring and at the end of summer."
+    - "Pick leaf by leaf, or cut the whole plant before it bolts."
+  fr:
+    - "Il monte en graine quand les jours sont longs : semer au printemps et en fin d'été."
+    - "Cueillir feuille à feuille, ou couper le pied entier avant qu'il monte."
