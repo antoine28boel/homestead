@@ -33,6 +33,7 @@
 | **Verger et vivaces** | Arbres fruitiers ; petits fruits ; aromatiques vivaces ; taille et traitements ; floraison et pollinisation ; greffes |
 | **Poulailler** | Registre des poules ; ponte quotidienne ; porte automatique ; niveaux d'eau et de grain ; soins (vermifuge, mue, poux) ; température et éclairage ; caméra |
 | **Interface** | Page dans la barre latérale ; cartes de tableau de bord ; saisie rapide au jardin sur smartphone ; statistiques (rendement par culture et par m²) |
+| **Permaculture** (proposée le 29/10/2026) | Sol vivant (paillis, compost, engrais verts) ; fonctions des plantes ; planches mixtes et vivaces ; zones et ensoleillement ; eau captée ; strates et guildes ; biodiversité ; compost et boucles avec le poulailler ; graines produites sur place ; bilan d'autonomie (voir §7) |
 
 **Écartés pour l'instant :** notification du matin, travaux de saison généraux, calendrier lunaire, dépenses, export CSV/PDF, plusieurs jardiniers.
 
@@ -144,7 +145,8 @@ Jardin : dates de gel, position, sources météo
   - **eau :** coefficients culturaux Kc par stade (FAO-56) et profondeur des racines ;
   - **degrés-jours :** température de base et somme nécessaire ;
   - **conseils :** courts textes traduits ;
-  - **succession :** intervalle conseillé entre deux semis.
+  - **succession :** intervalle conseillé entre deux semis ;
+  - **permaculture :** fonctions, ensoleillement, strate, durée de vie, engrais vert, isolement des porte-graines (voir §7).
 - Nouvelles familles de fichiers : arbres fruitiers, petits fruits, aromatiques vivaces (taille, traitements, floraison, groupes de pollinisation).
 - Les valeurs sont rédigées à partir de connaissances agronomiques générales ou de sources dont la licence permet la réutilisation (calendrier légumier de l'INRAE sous Etalab 2.0, FAO-56). Aucune base propriétaire n'est recopiée.
 
@@ -188,7 +190,124 @@ Au moment de placer une culture, l'interface signale :
 
 ---
 
-## 7. Ce que voit l'utilisateur dans HA
+## 7. Permaculture
+
+*Proposée le 29/10/2026, à valider : rien n'est encore codé.*
+
+Homestead applique déjà plusieurs principes de la permaculture : tout reste chez soi, on observe avant d'agir (journal, photos), les associations sont gérées, on prévoit la cuve et le bilan hydrique, et le poulailler fait partie du même système que le jardin. Il manque ce qui fait voir le jardin comme **un ensemble de relations** (sol, eau, plantes, animaux, déchets), et non comme une simple liste de cultures.
+
+**Règles :**
+- **Tout est optionnel.** Dans le même esprit que « fonctionne sans capteur », Homestead reste utile à qui ne pratique pas la permaculture. Il n'y a pas de « mode permaculture » à part : seulement des champs à remplir si on le souhaite et des suggestions.
+- **Des rappels, jamais des interdictions**, comme pour la rotation et les voisins.
+- **Des valeurs sourcées**, comme pour le reste du catalogue. Les associations et les « fonctions » des plantes sont inégalement étayées : on n'en retient que celles qu'une source reconnue appuie. La notion d'« accumulateur dynamique » est écartée, car elle repose sur trop peu de preuves.
+
+### Sol vivant (en premier)
+
+- **Journal :** trois nouveaux types d'entrée, `mulching`, `compost` et `green_manure`.
+  - Paillage : matière, épaisseur en cm, part couverte (%).
+  - Compost ou amendement : quantité (kg ou seaux) et origine.
+  - Engrais vert : couché, fauché ou enfoui.
+- **Travail du sol par espace :** champ `tillage`, à choisir parmi `none` (pas de travail), `light` (grelinette) ou `dug` (bêché). Ce champ informe : il ne change aucun calcul.
+- **Paillis :** chaque matière a une durée de vie, réglable. Quand la couverture estimée passe sous un seuil, la tâche « Renouveler le paillis » apparaît, et elle est avancée avant une période chaude prévue.
+- **Engrais verts au catalogue :** phacélie, moutarde blanche, trèfle incarnat, seigle-vesce, sarrasin.
+  - Champs : `green_manure: true`, fenêtres de semis en place, et `terminate` (combien de semaines après le semis il faut le coucher, avant la montée en graines).
+  - Ce sont des cultures comme les autres : elles comptent dans la rotation. Par exemple, la moutarde est une crucifère et reviendrait trop tôt derrière des choux.
+- **Proposition automatique :** quand un espace (ou une zone) reste libre plus de 6 semaines (seuil réglable) avant la prochaine culture prévue, l'application propose un engrais vert qui convient à la date, au gel et à la rotation.
+- **Jours de sol nu :** pour chaque espace, nombre de jours de l'année sans culture, sans engrais vert et sans paillis. Les périodes de culture et le journal suffisent pour le calculer.
+
+### Fonctions des plantes
+
+- **Nouveau champ `functions` au catalogue :** `nitrogen_fixer` (fixe l'azote), `pollinators` (nourrit les pollinisateurs), `beneficials` (attire les auxiliaires), `trap_crop` (plante piège), `mulch` (feuillage coupé et laissé sur place comme paillis), `ground_cover` (couvre-sol), `windbreak` (brise-vent).
+- **Espèces à ajouter :** capucine, souci, bourrache, phacélie, trèfle, consoude (vivace, avec la phase E).
+- **Fiche d'un espace :** fonctions présentes et fonctions absentes, par exemple « aucune fleur pour les pollinisateurs en juillet ». Une suggestion propose alors une espèce qui comble ce manque et qui est compatible avec les voisins.
+- **Nouveau champ `sun` :** `full` (plein soleil), `partial` (mi-ombre) ou `shade` (ombre). Il sert aussi aux zones et à l'ensoleillement.
+
+### Polyculture et vivaces
+
+- **Planche mixte :** espace marqué `mixed: true`. La rotation ne se juge plus famille par famille, mais sur l'ensemble de la planche. Il n'y a de rappel que si une même famille occupe plus de la moitié de la surface deux saisons de suite (seuil à valider).
+- **Cultures pluriannuelles** (rhubarbe, artichaut, oseille, fraisier, chou perpétuel) : champ `lifespan_years`. Elles restent en place plusieurs saisons sans être reprogrammées et ne comptent pas dans la rotation.
+- **Autosemis :** nouveau mode de démarrage `self_sown` pour les plantes qui se ressèment seules (bourrache, mâche, roquette, souci). On les enregistre sans étape de semis, au stade où on les trouve.
+
+### Zones et secteurs (sur le plan)
+
+- **Zones 0 à 5 :** un champ par espace et par objet. Par défaut, la zone est calculée à partir de la distance à la maison, qui devient un objet de décor (seuils réglables). Usages :
+  - dans « Aujourd'hui », les tâches de la zone 1 passent en premier ;
+  - un rappel suggère de placer près de la maison ce qui se cueille souvent (aromatiques, salades).
+- **Ensoleillement :**
+  - Les objets de décor (maison, abri, arbre, haie, serre) reçoivent une hauteur. Un arbre caduc laisse passer le soleil en hiver.
+  - Avec la position du soleil, calculée depuis les coordonnées de HA, l'application calcule les heures de soleil direct en chaque point du plan, pour une date donnée (solstices, équinoxes, aujourd'hui).
+  - Le résultat est une carte de chaleur, et les heures de soleil de chaque espace sont comparées au champ `sun` de ses cultures.
+- **Vent dominant :** rose des vents calculée avec l'archive Open-Meteo, déjà utilisée pour les gelées, et affichée sur le plan pour placer les haies brise-vent.
+
+### Eau captée
+
+- **Nouveaux objets de décor :** mare et baissière. On les dessine sans faire de calcul.
+- **Toiture reliée à la cuve :** litres captés = pluie (mm) × surface du toit (m²) × coefficient de ruissellement (0,8 par défaut).
+- **Bilan de la saison :** litres captés, arrosés depuis la cuve et perdus par débordement de la cuve pleine.
+- **Paillis dans le bilan hydrique :** un paillis organique réduit l'évaporation du sol d'environ 5 % pour chaque tranche de 10 % de surface couverte (FAO-56, chapitre 7). Les entrées `mulching` du journal suffisent pour en tenir compte.
+
+### Strates et guildes (avec la phase E)
+
+- **Nouveau champ `layer` :** `canopy` (canopée), `small_tree` (petit arbre), `shrub` (arbuste), `herbaceous` (herbacée), `ground_cover` (couvre-sol), `climber` (grimpante), `root` (racine).
+- **Guilde :** groupe nommé autour d'un arbre du plan. L'application propose des compagnons :
+  - pour couvrir les fonctions qui manquent (azote, pollinisateurs, paillis, couvre-sol) ;
+  - sur des strates différentes ;
+  - en tenant compte de l'ombre de l'arbre et des mauvais voisins.
+
+### Biodiversité
+
+- **Observations de faune :** nouvelle entrée de journal `wildlife`.
+  - On choisit dans une courte liste : abeilles, bourdons, syrphes, coccinelles, carabes, hérissons, oiseaux, limaces, pucerons, doryphores…
+  - Chaque observation porte une abondance (une, quelques-unes, beaucoup). La liste distingue auxiliaires et ravageurs.
+  - D'une année à l'autre, on voit si les auxiliaires arrivent avant les ravageurs.
+- **Floraison continue :** à partir des périodes de floraison du catalogue (cultures, vivaces, engrais verts), l'application signale les mois sans fleurs dans le jardin.
+
+### Boucles fermées (surtout avec la phase F)
+
+- **Compost :**
+  - Espace de type `compost`, qui reçoit des entrées : déchets verts, épluchures, litière du poulailler.
+  - Il est mûr à une date estimée, avec une durée réglable.
+  - Une sortie vers un espace crée l'entrée `compost` dans le journal de cet espace.
+- **Poulailler :**
+  - La litière changée part au compost et les épluchures vont aux poules.
+  - **Parcours tournant :** en fin de saison, on peut mettre les poules sur une planche pour qu'elles désherbent et fertilisent. La planche est alors marquée « poules », avec des dates. Avant de récolter des légumes mangés crus, un délai réglable s'applique après le fumier frais (règle d'hygiène).
+- **Graines produites sur place :**
+  - Nouveau stade « porte-graines » après la récolte.
+  - Une récolte de graines crée un lot dans la grainothèque, qui garde son origine (culture et saison).
+  - Rappels : une variété hybride F1 (champ `f1` de la variété) ne redonne pas la même plante, et les espèces qui se croisent entre elles ont besoin d'une distance d'isolement (champ `seed_isolation_m`, par exemple pour les courges).
+
+### Bilan d'autonomie (avec la phase G)
+
+Ce bilan est calculé par saison et comparé d'une année à l'autre :
+- kg récoltés (au total et par m²) et œufs ;
+- litres de pluie captés et eau de réseau utilisée ;
+- compost produit et lots de graines produits sur place ;
+- jours de sol nu et part de la surface couverte.
+
+### Ce qu'on ne fait pas
+
+- **Calendrier lunaire et biodynamie :** ils restent écartés (voir §2).
+- **Associations et fonctions sans source :** on ne les retient pas.
+- **Ajouts de l'utilisateur :** une association ou une fonction ajoutée à son catalogue personnel reste chez lui.
+
+### Ordre proposé
+
+1. **Phase B, avant les semis de février :**
+   - entrées de journal `mulching`, `compost` et `green_manure`, et champ `tillage` ;
+   - champs `functions` et `sun`, et espèces de la section « Fonctions des plantes » ;
+   - engrais verts et proposition quand un espace se libère ;
+   - planches mixtes, cultures pluriannuelles et `self_sown` ;
+   - stade « porte-graines », avec la grainothèque.
+2. **Plan, après la phase B :** zones, hauteurs des objets, ensoleillement, vent dominant.
+3. **Phase C :** paillis dans le bilan hydrique, eau captée, jours de sol nu.
+4. **Phase D :** observations de faune, à mettre en lien avec les photos.
+5. **Phase E :** strates, guildes, floraison continue.
+6. **Phase F :** compost et boucles avec le poulailler.
+7. **Phase G :** bilan d'autonomie.
+
+---
+
+## 8. Ce que voit l'utilisateur dans HA
 
 | Entité | Rôle |
 |---|---|
@@ -209,24 +328,24 @@ Au moment de placer une culture, l'interface signale :
 
 ---
 
-## 8. Phases
+## 9. Phases
 
 | Phase | Contenu | Visé pour |
 |---|---|---|
 | ~~0–1~~ | ~~Intégration seule : dates de gel, espaces, cultures, tâches, calendrier (v0.2)~~ | Faites le 27/10/2026 ; le moteur est repris dans l'application |
 | **A. Socle** | Application (serveur, base, interface derrière l'ingress) ; espaces, saisons, cultures, stades, journal, récoltes ; saisie rapide sur smartphone ; intégration compagnon (découverte, tâches, calendrier, stades, capteurs) ; images Docker et dépôt d'applications | Code écrit et testé le 27/10/2026 (v0.3.0) ; installé dans HA OS le 28/10/2026 |
-| **B. Planification** | Plan dessiné, rotation, associations, semis échelonnés, grainothèque, conseils par culture | Plan dessiné fait le 28/10/2026 (v0.4.0) ; rotation, associations et conseils le 29/10/2026 (v0.7.0) ; semis échelonnés et grainothèque avant les semis de février |
-| **C. Eau et climat** | Bilan hydrique, degrés-jours, sondes, gel, serre, cuve, vannes et blueprints | Mars–avril 2027 |
-| **D. Photos** | Album, timelapse, surface verte, identification, diagnostic par IA, maladies ; maturité en dernier | Printemps 2027 |
-| **E. Verger et vivaces** | Arbres, petits fruits, aromatiques, taille, traitements, floraison et pollinisation, greffes | Été 2027 |
-| **F. Poulailler** | Registre, ponte, porte, niveaux, soins, température et éclairage, caméra | À l'arrivée des poules |
-| **G. Finitions** | Statistiques de rendement, cartes de tableau de bord, documentation, publication | En continu |
+| **B. Planification** | Plan dessiné, rotation, associations, semis échelonnés, grainothèque, conseils par culture ; sol vivant, fonctions des plantes, engrais verts, planches mixtes, porte-graines ; puis zones et ensoleillement sur le plan (§7) | Plan dessiné fait le 28/10/2026 (v0.4.0) ; rotation, associations et conseils le 29/10/2026 (v0.7.0) ; semis échelonnés et grainothèque avant les semis de février |
+| **C. Eau et climat** | Bilan hydrique (avec le paillis), degrés-jours, sondes, gel, serre, cuve et eau captée, vannes et blueprints ; jours de sol nu | Mars–avril 2027 |
+| **D. Photos** | Album, timelapse, surface verte, identification, diagnostic par IA, maladies ; observations de faune ; maturité en dernier | Printemps 2027 |
+| **E. Verger et vivaces** | Arbres, petits fruits, aromatiques, taille, traitements, floraison et pollinisation, greffes ; strates, guildes, floraison continue | Été 2027 |
+| **F. Poulailler** | Registre, ponte, porte, niveaux, soins, température et éclairage, caméra ; compost, parcours tournant et boucles avec le jardin | À l'arrivée des poules |
+| **G. Finitions** | Statistiques de rendement, bilan d'autonomie, cartes de tableau de bord, documentation, publication | En continu |
 
 Avant chaque publication : tests automatisés, puis essai sur une installation HA vierge, pas seulement chez nous.
 
 ---
 
-## 9. Questions ouvertes
+## 10. Questions ouvertes
 
 1. **Capteurs et matériel** (phase C) : sondes d'humidité du sol, station météo ou pluviomètre, vannes, capteur de niveau de la cuve, ouvrants de serre. Quels modèles (Zigbee, ESPHome, Gardena…) ?
 2. **Caméras** (phase D) : une caméra est-elle prévue pour la serre ou le potager ?
